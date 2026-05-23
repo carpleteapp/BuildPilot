@@ -1,0 +1,1447 @@
+/**
+ * BuildPilot UX System — garage-first, one-hand, dark mode
+ * Load after page CSS; overrides only for touch, spacing, and consistency.
+ */
+:root {
+  --bp-card-border: rgba(255, 255, 255, 0.08);
+  --bp-warn: #ffb020;
+  --bp-danger: #ff453a;
+  --bp-pdf-red: #ff453a;
+  --bp-pdf-red-hi: #ff6b63;
+  --bp-neutral-outline: var(--bp-chapter-not-started, #9e9e9e);
+  --bp-reg-due-outline: #b8860b;
+
+  --bp-font: var(--bp-font-body, "Inter", system-ui, sans-serif);
+
+  --bp-space-xs: 0.35rem;
+  --bp-space-sm: 0.5rem;
+  --bp-space-md: 0.85rem;
+  --bp-space-lg: 1.1rem;
+  --bp-space-xl: 1.35rem;
+
+  --bp-radius-sm: 10px;
+  --bp-radius-md: 14px;
+  --bp-radius-lg: 16px;
+  --bp-radius-pill: 999px;
+
+  --bp-tap-icon: 44px;
+  --bp-input-min: 44px;
+
+  --bp-safe-top: env(safe-area-inset-top, 0px);
+  --bp-safe-right: env(safe-area-inset-right, 0px);
+  --bp-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bp-safe-left: env(safe-area-inset-left, 0px);
+
+  /* Index “+ Add Vehicle” dock — height includes Android nav-bar fallback when safe-area is 0 */
+  --bp-index-dock-pad-y: 0.625rem;
+  --bp-system-nav-min: 0px;
+  --bp-index-dock-bottom-clearance: calc(
+    var(--bp-index-dock-pad-y) + max(var(--bp-safe-bottom), var(--bp-system-nav-min))
+  );
+  --bp-index-dock-height: calc(
+    var(--bp-index-dock-pad-y) + var(--bp-bottom-nav-height, 52px) + var(--bp-index-dock-bottom-clearance)
+  );
+  --bp-thumb-dock-h: var(--bp-index-dock-height);
+  --bp-motion: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Primary CTA + chapter accents — tokens in buildpilot-core.css */
+  /* Build segment / chapter buttons — universal state colors */
+  --bp-chapter-not-started: #9e9e9e;
+  --bp-chapter-not-started-active: #8a8a8a;
+  --bp-chapter-in-progress: #2196f3;
+  --bp-chapter-in-progress-active: #1e88e5;
+  --bp-chapter-complete: #4caf50;
+  --bp-chapter-complete-active: #43a047;
+  --bp-chapter-segment-height: 52px;
+  /* Archived / inactive vehicle cards (completed) */
+  --bp-archived: #6e6e73;
+  --bp-archived-muted: #98989d;
+  --bp-archived-subtle: rgba(235, 235, 245, 0.55);
+  --bp-archived-fill: rgba(120, 120, 128, 0.14);
+  --bp-archived-border: rgba(142, 142, 147, 0.65);
+  --bp-vehicle-card-height: 17.5rem;
+  --bp-vehicle-card-height-completed: 14.25rem;
+  --bp-vehicle-card-min-height: var(--bp-vehicle-card-height);
+  --bp-vehicle-card-pad-x: 1.15rem;
+  --bp-vehicle-card-pad-y: 1rem;
+  --bp-vehicle-card-header-min: 2.65rem;
+  --bp-vehicle-card-meta-height: 1.375rem;
+  --bp-vehicle-card-metrics-min: 4.15rem;
+  --bp-vehicle-card-body-pad-bottom: 0.5rem;
+  --bp-vehicle-card-quick-actions-height: 3.25rem;
+  --bp-vehicle-card-progress-block: 1.3rem;
+  --bp-vehicle-delete-size: 28px;
+}
+
+/* Phones / touch: reserve space above Android system nav (often missing from safe-area) */
+@media (max-width: 520px), (hover: none) and (pointer: coarse) {
+  :root {
+    --bp-system-nav-min: 48px;
+  }
+}
+
+/* Map satellite modules to shared tokens */
+:root {
+  --gm-border: var(--bp-border, #333);
+  --shop-border: var(--bp-border, #2a2a2a);
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+[role="button"],
+a.bp-btn,
+summary,
+.bp-mode-tab,
+.bp-mode-tab-like {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Cards ── */
+.bp-card,
+.widget,
+.vehicle-card,
+.bi-panel,
+.inv-card,
+.shop-card,
+.bj-entry-card {
+  border-radius: var(--bp-radius-md);
+}
+
+/* ── Buttons (utility classes) ── */
+.bp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: var(--bp-tap-min);
+  padding: 0 1rem;
+  border-radius: var(--bp-radius-sm);
+  border: 1px solid var(--bp-border);
+  background: var(--bp-panel-raised);
+  color: var(--bp-text);
+  font-family: var(--bp-font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: transform var(--bp-motion), background var(--bp-motion), border-color var(--bp-motion);
+}
+.bp-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.bp-btn--primary {
+  border-color: var(--bp-cta-border);
+  background: var(--bp-cta-gradient);
+  color: #fff;
+  box-shadow: var(--bp-cta-shadow);
+}
+
+/* Chapter-style outline buttons (index toolbar + add vehicle) */
+.bp-btn-outline,
+.my-builds-actions .dashboard-toolbar-btn,
+.my-builds-actions .add-vehicle-btn,
+.bp-index-thumb-dock .bp-btn-outline,
+.vehicle-card-quick-actions .bp-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: var(--bp-chapter-segment-height);
+  padding: 0 1rem;
+  border: 2px solid var(--bp-neon-lo);
+  border-radius: var(--bp-radius-md);
+  background: var(--bp-neon-fill);
+  color: var(--bp-neon-hi);
+  font-family: var(--bp-font-body);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  cursor: pointer;
+  box-sizing: border-box;
+  box-shadow: none;
+  transition: background 160ms, border-color 160ms, color 160ms, transform 100ms;
+}
+.bp-btn-outline:hover,
+.my-builds-actions .dashboard-toolbar-btn:hover,
+.my-builds-actions .add-vehicle-btn:hover,
+.bp-index-thumb-dock .bp-btn-outline:hover,
+.vehicle-card-quick-actions .bp-btn-outline:hover {
+  background: var(--bp-neon-fill-hover);
+  border-color: var(--bp-neon-hi);
+  color: var(--bp-neon-hi);
+}
+.bp-btn-outline:active:not(:disabled),
+.my-builds-actions .dashboard-toolbar-btn:active,
+.my-builds-actions .add-vehicle-btn:active,
+.bp-index-thumb-dock .bp-btn-outline:active,
+.vehicle-card-quick-actions .bp-btn-outline:active {
+  transform: scale(0.98);
+  background: rgba(33, 150, 243, 0.18);
+}
+.my-builds-actions__toolbar .dashboard-toolbar-btn {
+  width: auto;
+  min-height: auto;
+  height: auto;
+}
+
+/* Primary CTA — navy gradient (not index toolbar / add vehicle) */
+.bp-btn-cta,
+.project-status-actions .system-add-btn,
+.start-wrenching-btn,
+.wf-resume-btn,
+.install-task-btn,
+.build-sheet-btn--primary,
+.inline-drawer-btn-primary:not(.inline-drawer-btn-primary--pdf),
+.bulk-btn,
+.bulk-download-btn,
+.user-manual-dismiss-btn,
+.modal-btn-row button:not(.modal-btn-cancel),
+.bp-index-thumb-dock .bp-btn.bp-btn--primary,
+.bp-index-thumb-dock .bp-btn.bp-btn-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 1rem;
+  border: 1px solid var(--bp-cta-border);
+  border-top-color: var(--bp-cta-border-top);
+  border-radius: var(--bp-radius-md);
+  background: var(--bp-cta-gradient);
+  color: #ffffff;
+  font-family: var(--bp-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  cursor: pointer;
+  box-sizing: border-box;
+  box-shadow: var(--bp-cta-shadow);
+  transition: background 160ms, box-shadow 160ms, transform 100ms, border-color 160ms;
+}
+.bp-btn-cta:hover,
+.project-status-actions .system-add-btn:hover,
+.start-wrenching-btn:hover,
+.wf-resume-btn:hover,
+.install-task-btn:hover,
+.build-sheet-btn--primary:hover,
+.inline-drawer-btn-primary:not(.inline-drawer-btn-primary--pdf):hover,
+.bulk-btn:hover,
+.bulk-download-btn:hover,
+.user-manual-dismiss-btn:hover,
+.modal-btn-row button:not(.modal-btn-cancel):hover {
+  border-color: var(--bp-neon-hi);
+  box-shadow:
+    0 6px 10px -2px rgba(0, 0, 0, 0.38),
+    0 3px 6px -1px rgba(0, 0, 0, 0.26),
+    0 0 28px var(--bp-neon-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.bp-btn-cta:active:not(:disabled),
+.project-status-actions .system-add-btn:active,
+.start-wrenching-btn:active,
+.wf-resume-btn:active,
+.install-task-btn:active,
+.build-sheet-btn--primary:active,
+.bulk-btn:active,
+.bulk-download-btn:active,
+.user-manual-dismiss-btn:active,
+.modal-btn-row button:not(.modal-btn-cancel):active,
+.bp-index-thumb-dock .bp-btn.bp-btn--primary:active {
+  background: var(--bp-cta-gradient-active);
+  transform: scale(0.97);
+}
+
+.wf-section-action.bp-btn-cta,
+.bp-btn-cta--compact,
+.install-task-btn {
+  width: auto;
+  min-width: auto;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  font-size: 0.68rem;
+  border-radius: var(--bp-radius-sm);
+}
+
+.reg-btn-blue.reg-status-btn,
+.reg-status-btn.reg-btn-blue {
+  background: var(--bp-cta-gradient) !important;
+  border: 1px solid var(--bp-cta-border) !important;
+  box-shadow: var(--bp-cta-shadow) !important;
+}
+
+/* Chapter dropdown — outline style (matches Garage Mode button) */
+.system-folder-body .system-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+.system-folder-body .system-tab-btn {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 0.4rem;
+  border-radius: var(--bp-radius-md, 12px);
+  border: 2px solid var(--bp-border, #333333);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--bp-font);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    background 160ms,
+    border-color 160ms,
+    color 160ms,
+    transform 100ms;
+}
+.system-folder-body .system-tab-btn:hover {
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.04);
+}
+.system-folder-body .system-tab-btn:active {
+  transform: scale(0.97);
+}
+.system-folder-body .system-tab-btn:not(.active):active {
+  background: rgba(255, 255, 255, 0.06);
+}
+.system-folder-body .system-add-btn,
+.add-build-segment-wrap .system-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  margin: 0 0 0.55rem;
+  padding: 0 0.85rem;
+  border-radius: var(--bp-radius-md, 12px);
+  border: 2px solid transparent;
+  background: transparent;
+  font-family: var(--bp-font);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  cursor: pointer;
+  box-sizing: border-box;
+  box-shadow: none;
+  transition: background 160ms, transform 100ms, border-color 160ms, color 160ms;
+}
+.system-folder-body .system-add-btn:active,
+.add-build-segment-wrap .system-add-btn:active {
+  transform: scale(0.98);
+}
+
+/* Not started — gray (matches chapter header) */
+.system-folder.chapter-state-empty .system-folder-body .system-tab-btn:not(.active) {
+  border-color: rgba(158, 158, 158, 0.35);
+}
+.system-folder.chapter-state-empty .system-folder-body .system-tab-btn:not(.active):hover {
+  border-color: var(--bp-chapter-not-started);
+  color: var(--bp-chapter-not-started);
+}
+.system-folder.chapter-state-empty .system-folder-body .system-tab-btn.active {
+  border-color: var(--bp-chapter-not-started);
+  background: rgba(158, 158, 158, 0.1);
+  color: var(--bp-chapter-not-started);
+}
+.system-folder.chapter-state-empty .system-folder-body .system-tab-btn.active:active {
+  background: rgba(158, 158, 158, 0.18);
+}
+.system-folder.chapter-state-empty .system-folder-body .system-add-btn {
+  border-color: var(--bp-chapter-not-started);
+  background: rgba(158, 158, 158, 0.1);
+  color: var(--bp-chapter-not-started);
+}
+.system-folder.chapter-state-empty .system-folder-body .system-add-btn:hover {
+  background: rgba(158, 158, 158, 0.14);
+  border-color: var(--bp-chapter-not-started);
+  color: var(--bp-chapter-not-started);
+}
+.system-folder.chapter-state-empty .system-folder-body .system-add-btn:active {
+  background: rgba(158, 158, 158, 0.18);
+}
+
+/* In progress — blue */
+.system-folder.chapter-state-in-progress .system-folder-body .system-tab-btn:not(.active) {
+  border-color: rgba(33, 150, 243, 0.35);
+}
+.system-folder.chapter-state-in-progress .system-folder-body .system-tab-btn:not(.active):hover {
+  border-color: var(--bp-chapter-in-progress);
+  color: var(--bp-chapter-in-progress);
+}
+.system-folder.chapter-state-in-progress .system-folder-body .system-tab-btn.active {
+  border-color: var(--bp-neon);
+  background: var(--bp-neon-fill);
+  color: var(--bp-neon-hi);
+}
+.system-folder.chapter-state-in-progress .system-folder-body .system-tab-btn.active:active {
+  background: rgba(33, 150, 243, 0.18);
+}
+.system-folder.chapter-state-in-progress .system-folder-body .system-add-btn {
+  border-color: var(--bp-chapter-in-progress);
+  background: rgba(33, 150, 243, 0.1);
+  color: var(--bp-chapter-in-progress);
+}
+.system-folder.chapter-state-in-progress .system-folder-body .system-add-btn:hover {
+  background: rgba(33, 150, 243, 0.14);
+  border-color: var(--bp-chapter-in-progress);
+  color: var(--bp-chapter-in-progress);
+}
+.system-folder.chapter-state-in-progress .system-folder-body .system-add-btn:active {
+  background: rgba(33, 150, 243, 0.18);
+}
+
+/* Complete — green */
+.system-folder.chapter-state-complete .system-folder-body .system-tab-btn:not(.active) {
+  border-color: rgba(76, 175, 80, 0.35);
+}
+.system-folder.chapter-state-complete .system-folder-body .system-tab-btn:not(.active):hover {
+  border-color: var(--bp-chapter-complete);
+  color: var(--bp-chapter-complete);
+}
+.system-folder.chapter-state-complete .system-folder-body .system-tab-btn.active {
+  border-color: var(--bp-neon);
+  background: var(--bp-neon-fill);
+  color: var(--bp-neon-hi);
+}
+.system-folder.chapter-state-complete .system-folder-body .system-tab-btn.active:active {
+  background: rgba(76, 175, 80, 0.18);
+}
+.system-folder.chapter-state-complete .system-folder-body .system-add-btn {
+  border-color: var(--bp-chapter-complete);
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--bp-chapter-complete);
+}
+.system-folder.chapter-state-complete .system-folder-body .system-add-btn:hover {
+  background: rgba(76, 175, 80, 0.14);
+  border-color: var(--bp-chapter-complete);
+  color: var(--bp-chapter-complete);
+}
+.system-folder.chapter-state-complete .system-folder-body .system-add-btn:active {
+  background: rgba(76, 175, 80, 0.18);
+}
+
+/* Vehicle detail hero metrics — same outline language as chapter tabs / add buttons */
+.wf-progress-metrics .wf-metric,
+.wf-progress-metrics .wf-pdf-sheet-toggle {
+  min-height: 52px;
+  height: auto;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--bp-radius-md, 14px);
+  border: 2px solid var(--bp-border, #333);
+  background: transparent;
+  box-sizing: border-box;
+  box-shadow: none;
+  transition:
+    background 160ms,
+    border-color 160ms,
+    color 160ms,
+    transform 100ms;
+}
+.wf-progress-metrics .wf-pdf-sheet-toggle {
+  width: 100%;
+  margin: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  cursor: pointer;
+  color: inherit;
+}
+.wf-progress-metrics .wf-metric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.wf-progress-metrics .wf-metric-lbl,
+.wf-progress-metrics .wf-pdf-sheet-toggle .pdf-build-btn-label {
+  font-family: var(--bp-font);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.15;
+  color: rgba(255, 255, 255, 0.5);
+}
+.wf-progress-metrics .wf-metric-val,
+.wf-progress-metrics .wf-metric-val-row .wf-metric-val {
+  margin-top: 0.15rem;
+  font-family: var(--bp-font);
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.wf-progress-metrics .wf-metric-val-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  margin-top: 0.2rem;
+  min-width: 0;
+}
+.wf-progress-metrics .wf-metric-val-row .wf-metric-val {
+  margin-top: 0;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wf-progress-metrics .wf-metric--editable {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.wf-progress-metrics .wf-metric--editable:active,
+.wf-progress-metrics .wf-pdf-sheet-toggle:active {
+  transform: scale(0.98);
+}
+.wf-progress-metrics .wf-metric--editable:focus-visible,
+.wf-progress-metrics .wf-pdf-sheet-toggle:focus-visible {
+  outline: 2px solid var(--bp-accent-hi);
+  outline-offset: 2px;
+}
+.wf-progress-metrics .wf-metric--full {
+  grid-column: 1 / -1;
+}
+.wf-progress-metrics .wf-metric-edit-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.wf-progress-metrics .wf-pdf-sheet-toggle .project-stats-chevron {
+  width: 0.65rem;
+  height: 0.65rem;
+  opacity: 0.9;
+  transition: transform 160ms;
+}
+.wf-progress-metrics .wf-pdf-sheet-toggle[aria-expanded="true"] .project-stats-chevron {
+  transform: rotate(180deg);
+}
+
+/* Est. Finish — neutral (gray chapter tone) */
+.wf-progress-metrics .wf-metric-est {
+  border-color: var(--bp-neutral-outline);
+  background: rgba(158, 158, 158, 0.1);
+}
+.wf-progress-metrics .wf-metric-est .wf-metric-val,
+.wf-progress-metrics .wf-metric-est .wf-metric-val-row .wf-metric-val {
+  color: rgba(245, 245, 245, 0.92);
+}
+.wf-progress-metrics .wf-metric-est.wf-metric--editable:hover {
+  background: rgba(158, 158, 158, 0.14);
+  border-color: #b0b0b0;
+}
+.wf-progress-metrics .wf-metric-est--unset .wf-metric-val,
+.wf-progress-metrics .wf-metric-est--unset .wf-metric-val-row .wf-metric-val {
+  color: var(--bp-neutral-outline);
+}
+
+/* PDF Build Sheet — pdf red outline */
+.wf-progress-metrics .wf-metric-pdf,
+.wf-progress-metrics .wf-pdf-sheet-toggle.wf-metric-pdf {
+  border-color: var(--bp-pdf-red);
+  background: rgba(255, 69, 58, 0.11);
+  color: var(--bp-pdf-red-hi);
+}
+.wf-progress-metrics .wf-metric-pdf .pdf-build-btn-label,
+.wf-progress-metrics .wf-pdf-sheet-toggle.wf-metric-pdf .pdf-build-btn-label {
+  color: var(--bp-pdf-red-hi);
+}
+.wf-progress-metrics .wf-metric-pdf:hover,
+.wf-progress-metrics .wf-pdf-sheet-toggle.wf-metric-pdf:hover {
+  background: rgba(255, 69, 58, 0.16);
+  border-color: #ff6b63;
+  color: #ff8a82;
+}
+
+/* Registration — outline follows status */
+.wf-progress-metrics .wf-metric-reg--current {
+  border-color: var(--bp-chapter-complete);
+  background: rgba(76, 175, 80, 0.1);
+}
+.wf-progress-metrics .wf-metric-reg--current .wf-metric-val,
+.wf-progress-metrics .wf-metric-reg--current .wf-metric-val-row .wf-metric-val {
+  color: var(--bp-chapter-complete);
+}
+.wf-progress-metrics .wf-metric-reg--current.wf-metric--editable:hover {
+  background: rgba(76, 175, 80, 0.16);
+  border-color: #66bb6a;
+}
+.wf-progress-metrics .wf-metric-reg--due {
+  border-color: var(--bp-reg-due-outline);
+  background: rgba(184, 134, 11, 0.12);
+}
+.wf-progress-metrics .wf-metric-reg--due .wf-metric-val,
+.wf-progress-metrics .wf-metric-reg--due .wf-metric-val-row .wf-metric-val {
+  color: #d4a84b;
+}
+.wf-progress-metrics .wf-metric-reg--due.wf-metric--editable:hover {
+  background: rgba(184, 134, 11, 0.18);
+  border-color: #d4a84b;
+}
+.wf-progress-metrics .wf-metric-reg--expired {
+  border-color: var(--bp-danger);
+  background: rgba(255, 69, 58, 0.1);
+}
+.wf-progress-metrics .wf-metric-reg--expired .wf-metric-val,
+.wf-progress-metrics .wf-metric-reg--expired .wf-metric-val-row .wf-metric-val {
+  color: var(--bp-pdf-red-hi);
+}
+.wf-progress-metrics .wf-metric-reg--expired.wf-metric--editable:hover {
+  background: rgba(255, 69, 58, 0.16);
+  border-color: #ff6b63;
+}
+.wf-progress-metrics .wf-metric-reg--nonop {
+  border-color: rgba(158, 158, 158, 0.45);
+  background: rgba(158, 158, 158, 0.08);
+}
+.wf-progress-metrics .wf-metric-reg--nonop .wf-metric-val,
+.wf-progress-metrics .wf-metric-reg--nonop .wf-metric-val-row .wf-metric-val {
+  color: rgba(245, 245, 245, 0.55);
+}
+.wf-progress-metrics .wf-metric-reg--unset {
+  border-color: var(--bp-neutral-outline);
+  background: rgba(158, 158, 158, 0.1);
+}
+.wf-progress-metrics .wf-metric-reg--unset .wf-metric-val,
+.wf-progress-metrics .wf-metric-reg--unset .wf-metric-val-row .wf-metric-val {
+  color: var(--bp-neutral-outline);
+}
+
+/* Add Build Segment (outside an open chapter) — in-progress blue */
+.add-build-segment-wrap .system-add-btn {
+  border-color: var(--bp-chapter-in-progress);
+  background: rgba(33, 150, 243, 0.1);
+  color: var(--bp-chapter-in-progress);
+}
+.add-build-segment-wrap .system-add-btn:hover {
+  background: rgba(33, 150, 243, 0.14);
+  border-color: var(--bp-chapter-in-progress);
+  color: var(--bp-chapter-in-progress);
+}
+.add-build-segment-wrap .system-add-btn:active {
+  background: rgba(33, 150, 243, 0.18);
+}
+.bp-btn--secondary {
+  border-color: var(--bp-garage);
+  background: rgba(57, 255, 20, 0.08);
+  color: var(--bp-garage);
+}
+.bp-btn--ghost {
+  background: transparent;
+  border-color: var(--bp-border);
+  color: var(--bp-text-soft);
+}
+.bp-btn--compact {
+  min-height: var(--bp-tap-min);
+  padding: 0 0.75rem;
+  font-size: 0.68rem;
+}
+.bp-btn--icon {
+  width: var(--bp-tap-icon);
+  min-width: var(--bp-tap-icon);
+  padding: 0;
+}
+
+/* ── Forms: glove-friendly inputs ── */
+input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+select,
+textarea,
+.form-input,
+.av-field-input,
+.mission-support-email-input,
+.inv-search-input,
+.shop-search-input {
+  min-height: var(--bp-input-min);
+  font-size: 16px; /* prevents iOS zoom on focus */
+}
+@media (min-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  select,
+  textarea,
+  .form-input {
+    font-size: 0.88rem;
+  }
+}
+
+/* ── Touch target upgrades (44px → 48px) ── */
+.dashboard-info-btn,
+.dashboard-info-btn--header {
+  width: var(--bp-tap-icon) !important;
+  height: var(--bp-tap-icon) !important;
+  min-width: var(--bp-tap-icon) !important;
+  min-height: var(--bp-tap-icon) !important;
+}
+.mission-modal-action-btn {
+  min-height: var(--bp-tap-min) !important;
+  padding: 0.65rem 0.75rem !important;
+}
+.bi-panel-icon-btn,
+.bi-config-btn,
+.bi-info-btn {
+  width: var(--bp-tap-icon) !important;
+  height: var(--bp-tap-icon) !important;
+  min-width: var(--bp-tap-icon) !important;
+  min-height: var(--bp-tap-icon) !important;
+}
+.bp-mode-tab,
+.shop-mode-tab {
+  min-height: var(--bp-tap-min);
+}
+.segment-card-edit-btn,
+.segment-card-delete-btn,
+.wf-section-action,
+.tracking-copy-btn {
+  min-height: var(--bp-tap-min);
+  min-width: var(--bp-tap-min);
+  padding: 0.5rem 0.75rem;
+}
+.vehicle-delete-btn {
+  width: var(--bp-vehicle-delete-size, 40px);
+  height: var(--bp-vehicle-delete-size, 40px);
+  min-width: var(--bp-vehicle-delete-size, 40px);
+  min-height: var(--bp-vehicle-delete-size, 40px);
+}
+.gm-chip {
+  min-height: var(--bp-tap-min);
+}
+
+/* ── Typography labels ── */
+.bp-eyebrow,
+.wf-section-title,
+.bi-panel-title {
+  font-family: var(--bp-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Section headings — Archivo display */
+.dashboard-section-title {
+  font-family: var(--bp-font-display);
+  font-weight: 800;
+  letter-spacing: var(--bp-letter-display, -0.02em);
+  text-transform: uppercase;
+  color: var(--bp-text-silver);
+}
+
+/* ── Index: thumb-zone dock (one-hand Add Vehicle) ── */
+.bp-index-thumb-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 48;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: var(--bp-index-dock-pad-y) max(1rem, var(--bp-safe-left))
+    var(--bp-index-dock-bottom-clearance)
+    max(1rem, var(--bp-safe-right));
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.72) 35%, #000 100%);
+}
+.bp-index-thumb-dock__inner {
+  width: 100%;
+  max-width: 28rem;
+  pointer-events: auto;
+}
+.bp-index-thumb-dock .bp-btn--primary,
+.bp-index-thumb-dock .bp-btn-cta,
+.bp-index-thumb-dock .bp-btn-outline {
+  width: 100%;
+  min-height: var(--bp-chapter-segment-height);
+  font-size: 0.72rem;
+  border-radius: var(--bp-radius-md);
+}
+
+/* Build segments — outline style (Garage Mode), state color themes */
+.system-folder > summary.chapter-state-empty,
+.system-folder > summary.chapter-state-in-progress,
+.system-folder > summary.chapter-state-complete,
+.system-folder > summary.has-progress {
+  box-sizing: border-box;
+  min-height: var(--bp-chapter-segment-height);
+  height: var(--bp-chapter-segment-height);
+  max-height: var(--bp-chapter-segment-height);
+  padding: 0 0.9rem;
+  border-radius: var(--bp-radius-md, 14px);
+  border: 2px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  transition:
+    background 160ms,
+    transform 100ms,
+    border-color 160ms,
+    color 160ms;
+}
+.system-folder > summary.chapter-state-empty:active,
+.system-folder > summary.chapter-state-in-progress:active,
+.system-folder > summary.chapter-state-complete:active {
+  transform: scale(0.98);
+}
+/* Not started — gray */
+.system-folder > summary.chapter-state-empty {
+  border-color: var(--bp-chapter-not-started);
+  background: rgba(158, 158, 158, 0.1);
+  color: var(--bp-chapter-not-started);
+}
+.system-folder > summary.chapter-state-empty:active {
+  background: rgba(158, 158, 158, 0.18);
+}
+.system-folder > summary.chapter-state-empty .system-folder-title,
+.system-folder > summary.chapter-state-empty .system-folder-pct {
+  color: var(--bp-chapter-not-started);
+}
+/* In progress — blue */
+.system-folder > summary.chapter-state-in-progress {
+  border-color: var(--bp-chapter-in-progress);
+  background: rgba(33, 150, 243, 0.1);
+  color: var(--bp-chapter-in-progress);
+}
+.system-folder > summary.chapter-state-in-progress:active {
+  background: rgba(33, 150, 243, 0.18);
+}
+.system-folder > summary.chapter-state-in-progress .system-folder-title,
+.system-folder > summary.chapter-state-in-progress .system-folder-pct {
+  color: var(--bp-chapter-in-progress);
+}
+/* Complete — green */
+.system-folder > summary.chapter-state-complete {
+  border-color: var(--bp-neon-lo);
+  background: var(--bp-neon-fill);
+  color: var(--bp-neon-hi);
+}
+.system-folder > summary.chapter-state-complete:active {
+  background: var(--bp-neon-fill-hover);
+}
+.system-folder > summary.chapter-state-complete .system-folder-title,
+.system-folder > summary.chapter-state-complete .system-folder-pct {
+  color: var(--bp-neon-hi);
+}
+
+body.bp-has-index-dock .main-shell {
+  padding-bottom: var(--bp-thumb-dock-h);
+}
+body.bp-has-index-dock .main-shell-inner {
+  padding-bottom: calc(1.5rem + var(--bp-thumb-dock-h));
+}
+
+/* ── Home: vehicle cards (uniform size, mobile hierarchy) ── */
+.list-stack > .vehicle-card {
+  width: 100%;
+  flex-shrink: 0;
+}
+.vehicle-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--bp-vehicle-card-height);
+  min-height: var(--bp-vehicle-card-height);
+  max-height: var(--bp-vehicle-card-height);
+  overflow: hidden;
+  border-radius: var(--bp-radius-md, 14px);
+  border: 1px solid var(--bp-card-border, rgba(255, 255, 255, 0.08));
+  background: var(--bp-panel);
+  box-shadow: var(--bp-panel-shadow);
+  font-family: var(--bp-font);
+  transition:
+    background 160ms,
+    border-color 160ms,
+    transform 100ms;
+}
+.vehicle-card:active {
+  transform: scale(0.995);
+}
+.vehicle-card-body {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  gap: 0.375rem;
+  padding:
+    var(--bp-vehicle-card-pad-y)
+    calc(var(--bp-vehicle-card-pad-x) + var(--bp-vehicle-delete-size) + 0.25rem)
+    var(--bp-vehicle-card-body-pad-bottom)
+    var(--bp-vehicle-card-pad-x) !important;
+}
+.vehicle-card-header {
+  flex: 0 0 auto;
+  min-height: var(--bp-vehicle-card-header-min);
+  margin: 0;
+  overflow: hidden;
+}
+.vehicle-card-name {
+  margin: 0;
+  padding: 0;
+  font-family: var(--bp-font-display);
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: var(--bp-letter-display, -0.02em);
+  line-height: 1.3;
+  color: var(--bp-text);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.vehicle-card-meta {
+  flex: 0 0 var(--bp-vehicle-card-meta-height);
+  display: flex;
+  align-items: center;
+  min-height: var(--bp-vehicle-card-meta-height);
+  max-height: var(--bp-vehicle-card-meta-height);
+  overflow: hidden;
+}
+.vehicle-card-meta--empty {
+  visibility: hidden;
+  pointer-events: none;
+}
+.vehicle-card-meta .reg-badge {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.625rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: var(--bp-radius-pill);
+  letter-spacing: 0.05em;
+}
+.vehicle-card-metrics {
+  flex: 1 1 auto;
+  min-height: var(--bp-vehicle-card-metrics-min);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.125rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.vehicle-card-stat,
+.vehicle-card-price-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 1.3125rem;
+  margin: 0;
+}
+.vehicle-card-stat-label,
+.vehicle-card-price-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--bp-text-subtle);
+  letter-spacing: 0.01em;
+}
+.vehicle-card-stat-value,
+.vehicle-card-price-val {
+  flex-shrink: 0;
+  font-family: var(--bp-mono);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--bp-text-soft);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  text-align: right;
+}
+.vehicle-card-stat--highlight .vehicle-card-stat-value,
+.vehicle-card-stat--highlight .vehicle-card-price-val,
+.vehicle-card-price-val.total {
+  font-weight: 800;
+  color: var(--bp-text);
+}
+.vehicle-card--completed .vehicle-card-body {
+  padding-bottom: var(--bp-vehicle-card-body-pad-bottom) !important;
+}
+/* My Builds — single active palette for every active card */
+.vehicle-card--active {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--bp-panel-shadow), 0 0 0 1px rgba(59, 158, 255, 0.22);
+  background: var(--bp-neon-fill);
+}
+.vehicle-card--active .vehicle-card-name {
+  color: #ffffff;
+}
+.vehicle-card--active .vehicle-card-stat--highlight .vehicle-card-stat-value,
+.vehicle-card--active .vehicle-card-stat--highlight .vehicle-card-price-val,
+.vehicle-card--active .vehicle-card-price-val.total {
+  color: var(--bp-neon-hi);
+}
+.vehicle-card--active .progress-fill {
+  background: linear-gradient(
+    90deg,
+    #1565c0 0%,
+    var(--bp-chapter-in-progress) 45%,
+    #64b5f6 100%
+  );
+  box-shadow:
+    0 0 12px rgba(33, 150, 243, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.32);
+}
+.vehicle-card--active .progress-track {
+  height: 8px;
+  min-height: 8px;
+  background: rgba(6, 18, 32, 0.88);
+  border-color: rgba(59, 158, 255, 0.32);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.55),
+    0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.vehicle-card--active .vehicle-card-body:focus-visible {
+  outline-color: var(--bp-chapter-in-progress);
+}
+.vehicle-card--active .vehicle-card-quick-actions {
+  border-top-color: rgba(76, 217, 100, 0.18);
+  background: rgba(76, 217, 100, 0.04);
+}
+/* Archived — completed (universal inactive palette) */
+.vehicle-card--completed {
+  border: 1px solid var(--bp-card-border, rgba(255, 255, 255, 0.08));
+  background: var(--bp-archived-fill);
+}
+.vehicle-card--completed .vehicle-card-name {
+  color: rgba(235, 235, 245, 0.78);
+}
+.vehicle-card--completed .vehicle-card-stat-label,
+.vehicle-card--completed .vehicle-card-price-label {
+  color: var(--bp-archived-subtle);
+}
+.vehicle-card--completed .vehicle-card-stat-value,
+.vehicle-card--completed .vehicle-card-price-val,
+.vehicle-card--completed .vehicle-card-stat--highlight .vehicle-card-stat-value,
+.vehicle-card--completed .vehicle-card-price-val.total {
+  color: var(--bp-archived-muted);
+}
+.vehicle-card--completed .progress-fill {
+  background: linear-gradient(90deg, #4a4a4e 0%, var(--bp-archived) 55%, #9a9aa0 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  opacity: 0.88;
+}
+.vehicle-card--completed .progress-track {
+  height: 8px;
+  min-height: 8px;
+  background: rgba(0, 0, 0, 0.42);
+  border-color: rgba(142, 142, 147, 0.4);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.vehicle-card--completed .vehicle-card-body:focus-visible {
+  outline-color: var(--bp-archived);
+}
+.vehicle-card--completed:active {
+  background: rgba(120, 120, 128, 0.2);
+}
+.vehicle-card--completed .vehicle-card-quick-actions {
+  border-top-color: rgba(120, 120, 128, 0.18);
+}
+
+.vehicle-card .vehicle-card-progress {
+  flex: 0 0 var(--bp-vehicle-card-progress-block);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem var(--bp-vehicle-card-pad-x) 0.55rem;
+  box-sizing: border-box;
+}
+.vehicle-card .progress-track {
+  width: 100%;
+  height: 8px;
+  min-height: 8px;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--bp-radius-pill);
+  overflow: hidden;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.48);
+}
+.vehicle-card .progress-fill {
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  border-radius: var(--bp-radius-pill);
+  transition: width 0.5s cubic-bezier(0.33, 1, 0.38, 1);
+}
+.vehicle-card .progress-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.06) 42%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.14) 100%
+  );
+  pointer-events: none;
+}
+.vehicle-card .progress-fill::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  right: 18%;
+  height: 35%;
+  border-radius: var(--bp-radius-pill);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent);
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Completed — invasive corner ribbon (top-left) */
+.vehicle-card-ribbon,
+.completed-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  width: 5.75rem;
+  height: 5.75rem;
+  overflow: hidden;
+  pointer-events: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  clip-path: none;
+}
+.vehicle-card-ribbon::before,
+.vehicle-card-ribbon::after,
+.vehicle-card-ribbon-edge {
+  display: none;
+}
+.vehicle-card-ribbon-label {
+  position: absolute;
+  top: 1.05rem;
+  left: -1.55rem;
+  width: 9rem;
+  padding: 0.38rem 0;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  text-align: center;
+  font-family: var(--bp-font-display, var(--bp-font));
+  font-weight: 800;
+  font-size: 0.5625rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #ffffff;
+  background: linear-gradient(180deg, #3ddc68 0%, #248a3d 100%);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+.vehicle-card-ribbon--completed,
+.completed-ribbon.vehicle-card-ribbon--completed {
+  --ribbon-accent: #248a3d;
+  --ribbon-bg: #34c759;
+}
+
+.vehicle-card .vehicle-delete-btn {
+  top: var(--bp-vehicle-card-pad-y);
+  right: var(--bp-vehicle-card-pad-x);
+  width: var(--bp-vehicle-delete-size);
+  height: var(--bp-vehicle-delete-size);
+  min-width: var(--bp-vehicle-delete-size);
+  min-height: var(--bp-vehicle-delete-size);
+  border: 1px solid rgba(255, 69, 58, 0.45);
+  border-radius: 8px;
+  background: rgba(255, 69, 58, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: none;
+}
+.vehicle-card .vehicle-delete-btn:hover {
+  background: rgba(255, 59, 48, 0.22);
+  color: #ffffff;
+}
+
+/* ── Vehicle card footer (Garage Mode) ── */
+.vehicle-card .vehicle-card-quick-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 var(--bp-vehicle-card-quick-actions-height);
+  height: var(--bp-vehicle-card-quick-actions-height);
+  min-height: var(--bp-vehicle-card-quick-actions-height);
+  max-height: var(--bp-vehicle-card-quick-actions-height);
+  gap: var(--bp-space-sm);
+  padding: 0.5rem var(--bp-vehicle-card-pad-x);
+  margin: 0;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  overflow: hidden;
+}
+.vehicle-card-quick-actions--reserved {
+  visibility: hidden;
+  pointer-events: none;
+  background: transparent !important;
+  border-top-color: transparent !important;
+}
+.vehicle-card-quick-actions .bp-btn-outline {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 2.75rem;
+  max-height: 2.75rem;
+  text-decoration: none;
+  border-color: var(--bp-garage-outline);
+  background: var(--bp-garage-outline-fill);
+  color: var(--bp-garage-outline);
+}
+.vehicle-card-quick-actions .bp-btn-outline:hover {
+  background: var(--bp-garage-outline-fill-hover);
+  border-color: var(--bp-garage-outline-hi);
+  color: var(--bp-garage-outline-hi);
+}
+.vehicle-card-quick-actions .bp-btn-outline:active:not(:disabled) {
+  background: var(--bp-garage-outline-fill-active);
+  border-color: var(--bp-garage-outline-hi);
+  color: var(--bp-garage-outline-hi);
+}
+
+/* ── Garage Mode CTA (vehicle cards + vehicle detail) ── */
+.bp-garage-mode-btn,
+.vehicle-card-quick-actions .bp-btn-outline.bp-garage-mode-btn,
+.detail-garage-mode-btn,
+.wf-garage-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
+  text-align: center;
+  font-family: var(--bp-font-body, Inter, sans-serif);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 2px solid var(--bp-garage-outline);
+  background: var(--bp-garage-outline-fill);
+  color: var(--bp-garage-outline);
+  border-radius: var(--bp-radius-md, 14px);
+  transition:
+    background 160ms,
+    border-color 160ms,
+    color 160ms,
+    transform 100ms;
+}
+.bp-garage-mode-btn:hover,
+.vehicle-card-quick-actions .bp-garage-mode-btn:hover,
+.detail-garage-mode-btn:hover,
+.wf-garage-mode-btn:hover {
+  background: var(--bp-garage-outline-fill-hover);
+  border-color: var(--bp-garage-outline-hi);
+  color: var(--bp-garage-outline-hi);
+}
+.bp-garage-mode-btn:active,
+.vehicle-card-quick-actions .bp-garage-mode-btn:active,
+.detail-garage-mode-btn:active,
+.wf-garage-mode-btn:active {
+  transform: scale(0.97);
+  background: var(--bp-garage-outline-fill-active);
+  border-color: var(--bp-garage-outline-hi);
+  color: var(--bp-garage-outline-hi);
+}
+.vehicle-card-quick-actions .bp-garage-mode-btn {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 2.75rem;
+  max-height: 2.75rem;
+}
+.detail-bottom-nav .bp-garage-mode-btn.bp-bottom-nav-item {
+  width: 100%;
+  min-height: var(--bp-bottom-nav-height, 52px);
+  height: var(--bp-bottom-nav-height, 52px);
+  max-height: var(--bp-bottom-nav-height, 52px);
+  font-size: var(--bp-bottom-nav-font-size, 0.72rem);
+  padding: 0 var(--bp-bottom-nav-pad-x, 0.75rem);
+}
+
+/* ── Vehicle detail: split bottom thumb dock ── */
+.bp-thumb-dock--split {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: var(--bp-space-sm);
+}
+.bp-thumb-dock--split .detail-back-dashboard-btn {
+  min-height: 52px;
+  font-size: 0.68rem;
+  padding: 0.75rem 0.5rem;
+}
+.bp-thumb-dock--split .detail-back-dashboard-btn__label {
+  font-size: 0.68rem;
+}
+@media (max-width: 340px) {
+  .bp-thumb-dock--split .detail-back-dashboard-btn__label {
+    font-size: 0.62rem;
+  }
+}
+
+/* ── Intelligence: collapsible on narrow screens ── */
+details.bi-panel-details {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+details.bi-panel-details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details.bi-panel-details > summary::-webkit-details-marker {
+  display: none;
+}
+details.bi-panel-details > summary::after {
+  content: "▾";
+  margin-left: 0.15rem;
+  flex-shrink: 0;
+  width: var(--bp-tap-icon);
+  min-width: var(--bp-tap-icon);
+  height: var(--bp-tap-icon);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.72;
+  color: var(--bp-text-soft, rgba(245, 245, 245, 0.72));
+  transition: transform var(--bp-motion);
+}
+details.bi-panel-details:not([open]) > summary::after {
+  transform: rotate(-90deg);
+}
+@media (min-width: 520px) {
+  details.bi-panel-details > summary {
+    cursor: default;
+    pointer-events: none;
+  }
+  details.bi-panel-details > summary::after {
+    display: none;
+  }
+}
+
+/* ── Clutter: hide duplicate in-header Add when dock visible ── */
+@media (max-width: 520px) {
+  body.bp-has-index-dock .my-builds-actions > .add-vehicle-btn {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+/* ── Focus & reduced motion ── */
+:focus-visible {
+  outline: 2px solid var(--bp-accent-hi);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .bp-btn:active,
+  .detail-garage-mode-btn:active {
+    transform: none;
+  }
+}
+
+/* ── Autofill / dark inputs (WebKit) ── */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #0a0a0a inset !important;
+  -webkit-text-fill-color: var(--bp-text) !important;
+}
+
+/* ── Empty list placeholders (dashboard, inventory, journal) ── */
+.bp-empty-state,
+.vehicle-section-empty,
+.inv-empty,
+.bj-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin: 0 auto;
+  padding: 2rem 1.35rem;
+  max-width: 22rem;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(20, 20, 28, 0.55);
+  color: var(--bp-text-soft, #8e8e93);
+  font-family: var(--bp-font-body, Inter, sans-serif);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+}
+
+.list-stack.is-empty .bp-empty-state,
+.inv-list.is-empty-primary,
+.bj-list.is-empty-primary {
+  margin-bottom: 1.35rem;
+}
+
+body.bp-empty-above-primary-action .bp-index-thumb-dock {
+  margin-top: 0.85rem;
+}

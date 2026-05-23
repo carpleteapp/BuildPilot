@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <title>Parts Inventory - BuildPilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/buildpilot-core.css" />
+  <link rel="stylesheet" href="css/buildpilot-inventory.css" />
+  <link rel="stylesheet" href="css/buildpilot-ux.css" />
+  <link rel="stylesheet" href="css/buildpilot-premium-overrides.css" />
+</head>
+<body class="inv-page">
+  <div class="inv-shell" id="inv-app">
+    <header class="inv-header" id="inv-header"></header>
+    <main id="inv-main"></main>
+  </div>
+
+  <button type="button" class="inv-fab inv-view-hidden" id="inv-fab-add">+ Add Part</button>
+
+  <nav class="inv-bottom-nav" aria-label="Inventory navigation">
+    <div class="inv-bottom-nav-inner">
+      <a href="#" class="inv-btn inv-btn--secondary bp-bottom-nav-item" id="inv-nav-detail">Build Detail</a>
+      <a href="index.html" class="inv-btn inv-btn--secondary bp-bottom-nav-item">Dashboard</a>
+    </div>
+  </nav>
+
+  <script src="js/buildpilot-storage.js"></script>
+  <script src="js/buildpilot-inventory.js"></script>
+  <script>
+    (function () {
+      if (window.BuildPilotStorage && window.BuildPilotStorage.ensureBetaCleanStorageForTrial) {
+        window.BuildPilotStorage.ensureBetaCleanStorageForTrial();
+      }
+      const I = window.BuildPilotInventory;
+      const UI = I.UI;
+      const BUILDPILOT_VEHICLES_KEY = "buildpilot_vehicles";
+      const LEGACY_VEHICLES_KEY = "vehicles";
+      const params = new URLSearchParams(window.location.search);
+      const vehicleId = params.get("id");
+      const editPartId = params.get("edit");
+      const isNew = params.has("new");
+
+      const state = {
+        tab: "needed",
+        query: "",
+        vendor: "",
+        status: "",
+        category: "",
+        installed: false,
+        missing: false
+      };
+
+      let vehicle = null;
+      let dashboardApi = null;
+      const headerEl = document.getElementById("inv-header");
+      const mainEl = document.getElementById("inv-main");
+      const fab = document.getElementById("inv-fab-add");
+
+      function navigate(qs) {
+        window.location.href = I.inventoryPageUrl(vehicleId, qs);
+      }
+
+      /** Load master vehicle array from canonical localStorage key (migrates legacy "vehicles"). */
+      function loadMasterVehiclesFromStorage() {
+        try {
+          let raw = localStorage.getItem(BUILDPILOT_VEHICLES_KEY);
+          if (raw == null || raw === "") {
+            raw = localStorage.getItem(LEGACY_VEHICLES_KEY);
+            if (raw) localStorage.setItem(BUILDPILOT_VEHICLES_KEY, raw);
+          }
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_e) {
+          return [];
+        }
+      }
+
+      function saveMasterVehiclesToStorage(vehicles) {
+        const payload = JSON.stringify(vehicles);
+        localStorage.setItem(BUILDPILOT_VEHICLES_KEY, payload);
+        localStorage.setItem(LEGACY_VEHICLES_KEY, payload);
+      }
+
+      /**
+       * Persist part on the active project vehicle in buildpilot_vehicles (parts array + lastUpdatedAt).
+       */
+      function commitPartToMasterVehicle(activeVehicleId, partPayload) {
+        if (!activeVehicleId) return null;
+        if (partPayload && typeof partPayload === "object") {
+          partPayload.category = I.exactTier1Category(partPayload.category);
+          partPayload.status = I.exactMvpPartStatus(partPayload.status);
+        }
+        const normalized = I.savePart(activeVehicleId, partPayload);
+        if (!normalized) return null;
+
+        const vehicles = loadMasterVehiclesFromStorage();
+        const idx = vehicles.findIndex((v) => v && String(v.id) === String(activeVehicleId));
+        if (idx < 0) return normalized;
+
+        const target = vehicles[idx];
+        I.ensureVehicleInventory(target);
+        const partIdx = target.parts.findIndex((p) => String(p.id) === String(normalized.id));
+        if (partIdx >= 0) target.parts[partIdx] = normalized;
+        else target.parts.push(normalized);
+        target.lastUpdatedAt = new Date().toISOString();
+        vehicles[idx] = target;
+        saveMasterVehiclesToStorage(vehicles);
+
+        try {
+          localStorage.removeItem(`vehicle_parts_${activeVehicleId}`);
+        } catch (_e) { /* ignore */ }
+
+        try {
+          window.dispatchEvent(
+            new CustomEvent("buildpilot:vehicles-updated", {
+              detail: { vehicleId: String(activeVehicleId) }
+            })
+          );
+        } catch (_e) { /* ignore */ }
+
+        return normalized;
+      }
+
+      function renderHeader(mode) {
+        headerEl.innerHTML = "";
+        const back = UI.el("button", "inv-back-btn", { type: "button", "aria-label": "Back" });
+        back.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>';
+        const text = UI.el("div", "inv-header-text");
+        text.appendChild(UI.el("p", "inv-eyebrow", { text: "Garage Inventory" }));
+        const title = vehicle ? [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(" ").trim() || vehicle.name : "Vehicle";
+        text.appendChild(UI.el("h1", "inv-title", { text: title }));
+        if (mode === "list") {
+          back.addEventListener("click", () => { window.location.href = `vehicle-detail.html?id=${encodeURIComponent(vehicleId)}`; });
+          text.appendChild(UI.el("p", "inv-sub", { text: "Advanced parts tracking" }));
+        } else {
+          back.addEventListener("click", () => navigate({}));
+          text.appendChild(UI.el("p", "inv-sub", { text: isNew ? "Add part" : "Edit part" }));
+        }
+        headerEl.appendChild(back);
+        headerEl.appendChild(text);
+      }
+
+      function renderList() {
+        if (dashboardApi && dashboardApi.destroy) dashboardApi.destroy();
+        fab.classList.remove("inv-view-hidden");
+        renderHeader("list");
+        mainEl.innerHTML = "";
+        const mount = UI.el("div", "");
+        mainEl.appendChild(mount);
+        dashboardApi = UI.renderDashboard(mount, vehicle, state, {
+          onFilterChange() {
+            if (dashboardApi && dashboardApi.renderList) dashboardApi.renderList();
+          },
+          onOpenPart(part) {
+            navigate({ edit: part.id });
+          }
+        });
+      }
+
+      function renderEditor(part) {
+        fab.classList.add("inv-view-hidden");
+        renderHeader("edit");
+        mainEl.innerHTML = "";
+        mainEl.appendChild(UI.partEditorForm(part, vehicle, {
+          onCancel() { navigate({}); },
+          onSave(payload) {
+            const saved = commitPartToMasterVehicle(vehicleId, payload);
+            if (!saved) {
+              alert("Could not save part to this build. Return to the dashboard and try again.");
+              return;
+            }
+            I.alignInventoryListState(state, saved.status);
+            vehicle = I.getVehicle(vehicleId);
+            navigate({});
+          }
+        }));
+      }
+
+      function init() {
+        if (!vehicleId) {
+          mainEl.innerHTML = "<p class='inv-empty'>No vehicle selected.</p>";
+          return;
+        }
+        vehicle = I.getVehicle(vehicleId);
+        if (!vehicle) {
+          mainEl.innerHTML = "<p class='inv-empty'>Vehicle not found.</p>";
+          return;
+        }
+        I.ensureVehicleInventory(vehicle);
+        I.persistVehicle(vehicle);
+        vehicle = I.getVehicle(vehicleId);
+
+        document.getElementById("inv-nav-detail").href = `vehicle-detail.html?id=${encodeURIComponent(vehicleId)}`;
+        fab.addEventListener("click", () => navigate({ new: "1" }));
+
+        if (isNew) {
+          renderEditor(null);
+          return;
+        }
+        if (editPartId) {
+          const part = vehicle.parts.find((p) => String(p.id) === String(editPartId));
+          if (!part) { renderList(); return; }
+          renderEditor(part);
+          return;
+        }
+        renderList();
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+    })();
+  </script>
+</body>
+</html>

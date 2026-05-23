@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <title>Build Journal - BuildPilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@300;400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/buildpilot-core.css" />
+  <link rel="stylesheet" href="css/buildpilot-journal.css" />
+  <link rel="stylesheet" href="css/buildpilot-ux.css" />
+  <link rel="stylesheet" href="css/buildpilot-premium-overrides.css" />
+</head>
+<body class="bj-page">
+  <div class="bj-shell" id="bj-app">
+    <header class="bj-header" id="bj-header"></header>
+    <main id="bj-main"></main>
+  </div>
+
+  <button type="button" class="bj-fab bj-view-hidden" id="bj-fab-add">+ Add Entry</button>
+
+  <nav class="bj-bottom-nav" aria-label="Journal navigation">
+    <div class="bj-bottom-nav-inner">
+      <a href="#" class="bj-btn bj-btn--secondary bp-bottom-nav-item" id="bj-nav-detail">Build Detail</a>
+      <a href="index.html" class="bj-btn bj-btn--secondary bp-bottom-nav-item">Dashboard</a>
+    </div>
+  </nav>
+
+  <script src="js/buildpilot-storage.js"></script>
+  <script src="js/buildpilot-journal.js"></script>
+  <script>
+    (function () {
+      if (window.BuildPilotStorage && window.BuildPilotStorage.ensureBetaCleanStorageForTrial) {
+        window.BuildPilotStorage.ensureBetaCleanStorageForTrial();
+      }
+      const J = window.BuildPilotJournal;
+      const UI = J.UI;
+
+      const params = new URLSearchParams(window.location.search);
+      const vehicleId = params.get("id");
+      const entryId = params.get("entry");
+      const isNew = params.has("new");
+      const isEdit = params.get("edit");
+
+      const state = {
+        vehicle: null,
+        phase: "all",
+        query: "",
+        dateFrom: "",
+        dateTo: ""
+      };
+
+      const headerEl = document.getElementById("bj-header");
+      const mainEl = document.getElementById("bj-main");
+      const fabEl = document.getElementById("bj-fab-add");
+      const navDetail = document.getElementById("bj-nav-detail");
+      const BP_EMPTY_FIRST_ENTRY =
+        "No items logged yet. Tap the button below to add your first entry!";
+
+      function navigate(queryParams) {
+        const url = J.journalPageUrl(vehicleId, queryParams);
+        window.location.href = url;
+      }
+
+      function renderHeader(mode) {
+        headerEl.innerHTML = "";
+        const back = UI.el("button", "bj-back-btn", { type: "button", "aria-label": "Back" });
+        back.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>';
+
+        const text = UI.el("div", "bj-header-text");
+        text.appendChild(UI.el("p", "bj-eyebrow", { text: "Build Journal" }));
+        text.appendChild(UI.el("h1", "bj-page-title", { text: J.getVehicleDisplayTitle(state.vehicle) }));
+
+        if (mode === "list") {
+          back.addEventListener("click", () => {
+            window.location.href = `vehicle-detail.html?id=${encodeURIComponent(vehicleId)}`;
+          });
+          text.appendChild(UI.el("p", "bj-subtitle", { text: "Document every garage session" }));
+        } else if (mode === "detail") {
+          back.addEventListener("click", () => navigate({}));
+          text.appendChild(UI.el("p", "bj-subtitle", { text: "Entry detail" }));
+        } else {
+          back.addEventListener("click", () => {
+            if (isEdit && entryId) navigate({ entry: entryId });
+            else navigate({});
+          });
+          text.appendChild(UI.el("p", "bj-subtitle", { text: isEdit ? "Edit entry" : "New entry" }));
+        }
+
+        headerEl.appendChild(back);
+        headerEl.appendChild(text);
+      }
+
+      function renderListView() {
+        fabEl.classList.remove("bj-view-hidden");
+        renderHeader("list");
+        mainEl.innerHTML = "";
+
+        const toolbar = UI.el("div", "bj-toolbar");
+        const searchRow = UI.el("div", "bj-search-row");
+        const searchInp = UI.el("input", "bj-input", {
+          id: "bj-search",
+          type: "search",
+          placeholder: "Search entries…",
+          "aria-label": "Search journal entries"
+        });
+        searchInp.value = state.query;
+        searchInp.addEventListener("input", () => {
+          state.query = searchInp.value;
+          renderListCards();
+        });
+        searchRow.appendChild(searchInp);
+        toolbar.appendChild(searchRow);
+
+        const dateFilters = UI.el("div", "bj-date-filters");
+        const fromWrap = UI.el("div", "");
+        const fromLbl = UI.el("label", "", { text: "From" });
+        const fromInp = UI.el("input", "bj-input", { id: "bj-from", type: "date" });
+        fromInp.value = state.dateFrom;
+        fromInp.addEventListener("change", () => { state.dateFrom = fromInp.value; renderListCards(); });
+        fromWrap.appendChild(fromLbl);
+        fromWrap.appendChild(fromInp);
+
+        const toWrap = UI.el("div", "");
+        const toLbl = UI.el("label", "", { text: "To" });
+        const toInp = UI.el("input", "bj-input", { id: "bj-to", type: "date" });
+        toInp.value = state.dateTo;
+        toInp.addEventListener("change", () => { state.dateTo = toInp.value; renderListCards(); });
+        toWrap.appendChild(toLbl);
+        toWrap.appendChild(toInp);
+        dateFilters.appendChild(fromWrap);
+        dateFilters.appendChild(toWrap);
+        toolbar.appendChild(dateFilters);
+        mainEl.appendChild(toolbar);
+
+        const timeline = UI.timelinePhaseBar(state.phase, (phase) => {
+          state.phase = phase;
+          renderListView();
+        });
+        mainEl.appendChild(timeline);
+
+        const listMount = UI.el("div", "bj-list", { id: "bj-list-mount" });
+        mainEl.appendChild(listMount);
+
+        function renderListCards() {
+          const mount = document.getElementById("bj-list-mount");
+          if (!mount) return;
+          mount.innerHTML = "";
+          mount.classList.remove("is-empty-primary");
+          const all = J.listJournalEntries(vehicleId);
+          const filtered = J.filterJournalEntries(all, {
+            query: state.query,
+            timelinePhase: state.phase,
+            dateFrom: state.dateFrom,
+            dateTo: state.dateTo
+          });
+          const hasFilters =
+            !!state.query || !!state.dateFrom || !!state.dateTo || state.phase !== "all";
+
+          document.body.classList.toggle("bp-empty-above-primary-action", all.length === 0);
+
+          if (!filtered.length) {
+            const msg =
+              all.length === 0
+                ? BP_EMPTY_FIRST_ENTRY
+                : hasFilters
+                  ? "No entries match your filters."
+                  : "No journal entries in this phase. Try another filter or tap + Add Entry below.";
+            mount.classList.add("is-empty-primary");
+            mount.appendChild(UI.el("div", "bj-empty bp-empty-state", { role: "status", text: msg }));
+            return;
+          }
+          filtered.forEach((entry) => {
+            mount.appendChild(UI.journalListCard(entry, {
+              onOpen(e) { navigate({ entry: e.id }); }
+            }));
+          });
+        }
+        renderListCards();
+      }
+
+      function renderDetailView(entry) {
+        fabEl.classList.add("bj-view-hidden");
+        renderHeader("detail");
+        mainEl.innerHTML = "";
+        mainEl.appendChild(UI.journalDetailView(entry, state.vehicle, {
+          onBack() { navigate({}); },
+          onEdit() { navigate({ edit: entry.id }); },
+          onDelete() {
+            if (!confirm("Delete this journal entry? This cannot be undone.")) return;
+            J.deleteJournalEntry(vehicleId, entry.id);
+            navigate({});
+          }
+        }));
+      }
+
+      function renderFormView(existing) {
+        fabEl.classList.add("bj-view-hidden");
+        renderHeader("form");
+        mainEl.innerHTML = "";
+        mainEl.appendChild(UI.journalEntryForm(existing, state.vehicle, {
+          onCancel() {
+            if (existing && existing.id) navigate({ entry: existing.id });
+            else navigate({});
+          },
+          onSave(payload) {
+            J.saveJournalEntry(vehicleId, payload);
+            navigate({ entry: payload.id });
+          }
+        }));
+      }
+
+      function init() {
+        if (!vehicleId) {
+          mainEl.innerHTML = "";
+          mainEl.appendChild(UI.el("p", "bj-empty", { text: "No vehicle selected." }));
+          return;
+        }
+
+        state.vehicle = J.getVehicleById(vehicleId);
+        if (!state.vehicle) {
+          mainEl.innerHTML = "";
+          mainEl.appendChild(UI.el("p", "bj-empty", { text: "Vehicle not found." }));
+          return;
+        }
+
+        J.ensureJournalOnVehicle(state.vehicle);
+        state.vehicle = J.getVehicleById(vehicleId);
+        localStorage.setItem(J.LS_SELECTED_VEHICLE_ID_KEY, String(vehicleId));
+
+        if (navDetail) {
+          navDetail.href = `vehicle-detail.html?id=${encodeURIComponent(vehicleId)}`;
+        }
+
+        fabEl.addEventListener("click", () => navigate({ new: "1" }));
+
+        if (isNew) {
+          renderFormView(null);
+          return;
+        }
+        if (isEdit) {
+          const entry = J.getJournalEntry(vehicleId, isEdit);
+          if (!entry) {
+            renderListView();
+            return;
+          }
+          renderFormView(entry);
+          return;
+        }
+        if (entryId) {
+          const entry = J.getJournalEntry(vehicleId, entryId);
+          if (!entry) {
+            renderListView();
+            return;
+          }
+          renderDetailView(entry);
+          return;
+        }
+        renderListView();
+      }
+
+      document.addEventListener("DOMContentLoaded", init);
+    })();
+  </script>
+</body>
+</html>

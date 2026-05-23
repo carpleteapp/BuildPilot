@@ -1,0 +1,390 @@
+/**
+ * BuildPilot Core — typography, tokens, touch targets, panels, status pills
+ * Load before page-specific CSS and buildpilot-ux.css
+ */
+:root {
+  /* Obsidian surfaces */
+  --bp-bg: #000000;
+  --bp-panel: #0f0f11;
+  --bp-panel-raised: #16161a;
+  --bp-panel-elevated: #1e1e24;
+  --bp-border: rgba(255, 255, 255, 0.06);
+  --bp-border-subtle: rgba(255, 255, 255, 0.04);
+  --bp-panel-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  /* High-contrast text hierarchy */
+  --bp-text: #ffffff;
+  --bp-text-silver: #d4d8e0;
+  --bp-text-soft: #9aa3b0;
+  --bp-text-subtle: #6e7888;
+
+  /* Neon accent — primary CTA, active toggles, completion highlights */
+  --bp-neon: #2dff6e;
+  --bp-neon-hi: #6dffa0;
+  --bp-neon-lo: #1bc95a;
+  --bp-neon-glow: rgba(45, 255, 110, 0.35);
+  --bp-neon-fill: rgba(45, 255, 110, 0.12);
+  --bp-neon-fill-hover: rgba(45, 255, 110, 0.18);
+
+  /* Legacy accent aliases (maps for existing rules) */
+  --bp-accent: var(--bp-neon);
+  --bp-accent-hi: var(--bp-neon-hi);
+  --bp-green: var(--bp-neon);
+  --bp-garage: var(--bp-neon);
+  --bp-garage-outline: #3de87a;
+  --bp-garage-outline-hi: var(--bp-neon-hi);
+  --bp-garage-outline-fill: var(--bp-neon-fill);
+  --bp-garage-outline-fill-hover: var(--bp-neon-fill-hover);
+  --bp-garage-outline-fill-active: rgba(45, 255, 110, 0.24);
+
+  /* Part / workflow status pills */
+  --bp-status-needed-bg: #4a3208;
+  --bp-status-needed-fg: #fcd34d;
+  --bp-status-needed-border: #b45309;
+  --bp-status-ordered-bg: #352550;
+  --bp-status-ordered-fg: #e9d5ff;
+  --bp-status-ordered-border: #8b6bb8;
+  --bp-status-received-bg: #3d3408;
+  --bp-status-received-fg: #fde047;
+  --bp-status-received-border: #ca8a04;
+  --bp-status-installed-bg: #0d3520;
+  --bp-status-installed-fg: #2dff6e;
+  --bp-status-installed-border: #1bc95a;
+
+  --bp-font-display: "Archivo", "Inter", system-ui, sans-serif;
+  --bp-font-body: "Inter", system-ui, sans-serif;
+  --bp-mono: "JetBrains Mono", "Courier New", monospace;
+
+  --bp-tap-min: 44px;
+  --bp-letter-display: -0.02em;
+
+  /* Top header title — index, inventory, journal */
+  --bp-header-title-size: 1.25rem;
+  --bp-header-title-weight: 800;
+  --bp-header-title-line-height: 1.1;
+  --bp-header-back-size: 44px;
+
+  /* Primary CTA — neon racing green */
+  --bp-cta-border: rgba(45, 255, 110, 0.42);
+  --bp-cta-border-top: rgba(255, 255, 255, 0.12);
+  --bp-cta-gradient: linear-gradient(180deg, #1a4d32 0%, #123d28 48%, #0a2818 100%);
+  --bp-cta-gradient-active: linear-gradient(180deg, #123d28 0%, #0a2818 100%);
+  --bp-cta-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.38),
+    0 2px 4px -1px rgba(0, 0, 0, 0.24),
+    0 0 20px var(--bp-neon-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  /* Map satellite page tokens */
+  --svc-bg-top: var(--bp-bg);
+  --svc-bg-bottom: var(--bp-bg);
+  --svc-panel: var(--bp-panel);
+  --svc-panel-raised: var(--bp-panel-raised);
+  --svc-border: var(--bp-border);
+  --svc-border-subtle: var(--bp-border-subtle);
+  --svc-text: var(--bp-text);
+  --svc-text-soft: var(--bp-text-soft);
+  --svc-text-subtle: var(--bp-text-subtle);
+  --svc-green: var(--bp-neon);
+  --svc-cobalt: #3b9eff;
+  --svc-cobalt-hi: #6eb8ff;
+  --inv-bg: var(--bp-bg);
+  --inv-panel: var(--bp-panel);
+  --inv-raised: var(--bp-panel-raised);
+  --inv-border: var(--bp-border);
+  --inv-text: var(--bp-text);
+  --inv-soft: var(--bp-text-soft);
+  --inv-subtle: var(--bp-text-subtle);
+  --bj-bg: var(--bp-bg);
+  --bj-panel: var(--bp-panel);
+  --bj-panel-raised: var(--bp-panel-raised);
+  --bj-border: var(--bp-border);
+  --bj-text: var(--bp-text);
+  --bj-text-soft: var(--bp-text-soft);
+  --bj-text-subtle: var(--bp-text-subtle);
+  --gm-bg: var(--bp-bg);
+  --gm-surface: var(--bp-panel);
+  --gm-raised: var(--bp-panel-raised);
+  --gm-border: var(--bp-border);
+  --gm-text: var(--bp-text);
+  --gm-muted: var(--bp-text-soft);
+  --gm-accent: var(--bp-neon);
+}
+
+/* Typography hierarchy */
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--bp-font-body);
+  color: var(--bp-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+.bp-display-title,
+.brand-header-title,
+.gm-title,
+.vehicle-card-name,
+.vehicle-hero-title,
+.info-panel-title,
+.about-modal-section-title,
+.mission-support-form-title,
+.modal-title,
+.system-folder-title,
+.wf-section-title--display {
+  font-family: var(--bp-font-display);
+  font-weight: 800;
+  letter-spacing: var(--bp-letter-display);
+  color: var(--bp-text);
+}
+
+/* Page header titles — identical across index, inventory, journal */
+.app-header-title,
+.inv-title,
+.bj-page-title {
+  margin: 0;
+  padding: 0;
+  font-family: var(--bp-font-display);
+  font-size: var(--bp-header-title-size);
+  font-weight: var(--bp-header-title-weight);
+  line-height: var(--bp-header-title-line-height);
+  letter-spacing: var(--bp-letter-display);
+  color: var(--bp-text);
+  text-transform: none;
+}
+
+/* Inventory / journal page headers — align title block with back control */
+.inv-header,
+.bj-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.inv-header-text,
+.bj-header-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.inv-back-btn,
+.bj-back-btn {
+  flex-shrink: 0;
+  align-self: center;
+  width: var(--bp-header-back-size);
+  height: var(--bp-header-back-size);
+  min-width: var(--bp-header-back-size);
+  min-height: var(--bp-header-back-size);
+}
+
+.app-header-brand {
+  align-items: center;
+}
+
+h2,
+.bp-eyebrow,
+.inv-eyebrow,
+.bj-eyebrow,
+.gm-eyebrow,
+.project-stats-insights-label,
+.user-manual-legend-title,
+.segment-status-label,
+.inv-filter-label,
+.bj-date-filters label {
+  font-family: var(--bp-font-body);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bp-text-subtle);
+}
+
+p,
+label,
+input,
+select,
+textarea,
+button,
+.bp-body,
+.inv-sub,
+.bj-subtitle,
+.gm-sub,
+.dashboard-label,
+.reg-status-label,
+.input-label,
+.about-modal-p,
+.info-panel-tagline {
+  font-family: var(--bp-font-body);
+}
+
+.bp-meta,
+.vehicle-card-stat-label,
+.vehicle-card-price-label,
+.garage-breakdown-label,
+.inv-part-vendor,
+.bj-entry-meta {
+  color: var(--bp-text-soft);
+}
+
+.bp-meta-strong,
+.vehicle-card-stat-value,
+#garage-total-investment {
+  color: var(--bp-text-silver);
+}
+
+/* Panel separation — obsidian layers, minimal borders */
+.bp-panel,
+.widget,
+.vehicle-card,
+.bi-panel,
+.inv-part-card,
+.inv-empty,
+.bj-card,
+.bj-entry-card,
+.gm-stat-chip,
+.gm-task-row,
+.vehicle-detail-summary,
+.system-folder,
+.info-panel-sheet,
+.user-manual-sheet,
+.modal-content {
+  background: var(--bp-panel);
+  border: 1px solid var(--bp-border);
+  box-shadow: var(--bp-panel-shadow);
+}
+
+.bp-panel--raised,
+.inv-input,
+.bj-input,
+.gm-back-btn,
+.inv-back-btn,
+.bj-back-btn {
+  background: var(--bp-panel-raised);
+}
+
+.system-folder-body {
+  border-top: 1px solid var(--bp-border-subtle);
+}
+
+.vehicle-card-metrics,
+.vehicle-card .vehicle-card-quick-actions {
+  border-top-color: var(--bp-border-subtle) !important;
+}
+
+/* Touch targets — 44px minimum */
+button,
+[role="button"],
+.bp-btn,
+.inv-btn,
+.inv-tab,
+.inv-part-card,
+.inv-chk,
+.bj-btn,
+.gm-nav-btn,
+.gm-chip,
+.gm-task-row,
+.system-tab-btn,
+.chapter-item-preview,
+.chapter-item-row,
+.list-item-card,
+.templates-menu-btn,
+.dashboard-toolbar-btn,
+.vault-export-btn,
+.vault-import-btn,
+.detail-back-dashboard-btn,
+.segment-action-btn {
+  min-height: var(--bp-tap-min);
+}
+
+/* Status pills — Needed / Ordered / Received / Installed */
+.part-status-pill,
+.inv-status-badge,
+.bp-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.375rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-family: var(--bp-font-body);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.status-needed,
+.part-status-pill.status-needed,
+.inv-status-needed,
+.inv-status-planned {
+  background: color-mix(in srgb, var(--bp-status-needed-bg) 88%, transparent);
+  color: var(--bp-status-needed-fg);
+  border-color: var(--bp-status-needed-border);
+}
+
+.status-ordered,
+.status-in-progress,
+.part-status-pill.status-ordered,
+.part-status-pill.status-in-progress,
+.inv-status-ordered,
+.inv-status-shipped {
+  background: color-mix(in srgb, var(--bp-status-ordered-bg) 88%, transparent);
+  color: var(--bp-status-ordered-fg);
+  border-color: var(--bp-status-ordered-border);
+}
+
+.status-received,
+.part-status-pill.status-received,
+.inv-status-received,
+.inv-status-delivered {
+  background: color-mix(in srgb, var(--bp-status-received-bg) 88%, transparent);
+  color: var(--bp-status-received-fg);
+  border-color: var(--bp-status-received-border);
+}
+
+.status-installed,
+.status-complete,
+.part-status-pill.status-installed,
+.part-status-pill.status-complete,
+.inv-status-installed {
+  background: color-mix(in srgb, var(--bp-status-installed-bg) 88%, transparent);
+  color: var(--bp-status-installed-fg);
+  border-color: var(--bp-status-installed-border);
+}
+
+/* Completion checkmarks */
+.uniform-checkbox:checked {
+  background: var(--bp-neon-fill) !important;
+  border-color: var(--bp-neon) !important;
+}
+.uniform-checkbox:checked::after,
+.uniform-checkbox:checked:after {
+  background: var(--bp-neon) !important;
+  opacity: 1 !important;
+}
+.uniform-checkbox:focus {
+  outline-color: var(--bp-neon-hi) !important;
+}
+
+/* Active filter tabs */
+.inv-tab.is-active,
+.bp-mode-tab.is-active,
+.shop-mode-tab.is-active {
+  border-color: var(--bp-neon) !important;
+  background: var(--bp-neon-fill) !important;
+  color: var(--bp-neon-hi) !important;
+}
+
+:focus-visible {
+  outline-color: var(--bp-neon-hi);
+}

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Garage Mode - BuildPilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/buildpilot-core.css" />
+  <link rel="stylesheet" href="css/buildpilot-garage-mode.css" />
+  <link rel="stylesheet" href="css/buildpilot-ux.css" />
+  <link rel="stylesheet" href="css/buildpilot-premium-overrides.css" />
+</head>
+<body>
+  <div class="gm-shell" id="gm-app">
+    <header class="gm-header" id="gm-header"></header>
+    <main id="gm-main"></main>
+  </div>
+
+  <div class="gm-sheet-backdrop" id="gm-sheet-backdrop" aria-hidden="true"></div>
+  <div class="gm-sheet" id="gm-sheet" role="dialog" aria-modal="true" aria-hidden="true"></div>
+
+  <input type="file" id="gm-photo-input" class="gm-hidden-input" accept="image/*" capture="environment" />
+  <input type="file" id="gm-photo-input-gallery" class="gm-hidden-input" accept="image/*" />
+
+  <nav class="gm-bottom-nav" aria-label="Garage navigation">
+    <div class="gm-bottom-nav-inner">
+      <a href="index.html" class="gm-nav-btn gm-nav-btn--back-dashboard">Back to Dashboard</a>
+    </div>
+  </nav>
+
+  <script src="js/buildpilot-storage.js"></script>
+  <script src="js/buildpilot-journal.js"></script>
+  <script src="js/buildpilot-inventory.js"></script>
+  <script src="js/buildpilot-garage-mode.js"></script>
+  <script>
+    (function () {
+      if (window.BuildPilotStorage && window.BuildPilotStorage.ensureBetaCleanStorageForTrial) {
+        window.BuildPilotStorage.ensureBetaCleanStorageForTrial();
+      }
+      const G = window.BuildPilotGarageMode;
+      const UI = G.UI;
+      const params = new URLSearchParams(window.location.search);
+      const vehicleId = params.get("id");
+
+      const headerEl = document.getElementById("gm-header");
+      const mainEl = document.getElementById("gm-main");
+      const sheetBackdrop = document.getElementById("gm-sheet-backdrop");
+      const sheetEl = document.getElementById("gm-sheet");
+      const photoInput = document.getElementById("gm-photo-input");
+      const photoGalleryInput = document.getElementById("gm-photo-input-gallery");
+      function detailPageHref(id) {
+        return G.vehicleDetailPageUrl(id);
+      }
+
+      let vehicle = null;
+      let session = null;
+      let timerTick = null;
+      let voiceRec = null;
+      let voiceTranscript = "";
+
+      const CATEGORIES = (window.BuildPilotStorage && window.BuildPilotStorage.TIER1_PART_CATEGORIES)
+        ? window.BuildPilotStorage.TIER1_PART_CATEGORIES.slice()
+        : [
+          "Engine",
+          "Cooling System",
+          "Fuel System",
+          "Exhaust System",
+          "Drivetrain",
+          "Brakes",
+          "Suspension & Steering",
+          "Electrical & Ignition",
+          "Body & Exterior",
+          "Interior",
+          "Wheels & Tires"
+        ];
+
+      function reloadVehicle() {
+        vehicle = G.getVehicle(vehicleId);
+        if (vehicle && window.BuildPilotInventory) {
+          window.BuildPilotInventory.ensureVehicleInventory(vehicle);
+        }
+        if (vehicle && window.BuildPilotJournal) {
+          window.BuildPilotJournal.ensureJournalOnVehicle(vehicle);
+        }
+        session = vehicle ? G.getActiveSession(vehicle) : null;
+      }
+
+      function openSheet(title, contentNode) {
+        sheetEl.innerHTML = "";
+        sheetEl.appendChild(UI.el("h2", "gm-sheet-title", { text: title }));
+        sheetEl.appendChild(contentNode);
+        const close = UI.el("button", "gm-sheet-close", { type: "button", text: "Close" });
+        close.addEventListener("click", closeSheet);
+        sheetEl.appendChild(close);
+        sheetBackdrop.classList.add("is-open");
+        sheetEl.classList.add("is-open");
+        sheetBackdrop.setAttribute("aria-hidden", "false");
+        sheetEl.setAttribute("aria-hidden", "false");
+      }
+
+      function closeSheet() {
+        stopVoice();
+        sheetBackdrop.classList.remove("is-open");
+        sheetEl.classList.remove("is-open");
+        sheetBackdrop.setAttribute("aria-hidden", "true");
+        sheetEl.setAttribute("aria-hidden", "true");
+      }
+
+      sheetBackdrop.addEventListener("click", closeSheet);
+
+      function renderHeader() {
+        headerEl.innerHTML = "";
+        const back = UI.el("button", "gm-back-btn", { type: "button", "aria-label": "Back" });
+        back.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>';
+        back.addEventListener("click", () => {
+          window.location.href = detailPageHref(vehicleId);
+        });
+        const text = UI.el("div", "gm-header-text");
+        text.appendChild(UI.el("p", "gm-eyebrow", { text: "Garage Mode" }));
+        text.appendChild(UI.el("h1", "gm-title", { text: G.getVehicleDisplayTitle(vehicle) }));
+        if (session) {
+          const sub = UI.el("p", "gm-sub", { text: `Session since ${G.formatTime(session.startedAt)}` });
+          text.appendChild(sub);
+          const timerLbl = UI.el("p", "gm-timer-lbl", {
+            id: "gm-timer-lbl",
+            text: session.timer.running ? "Work timer (running)" : "Work timer (paused)"
+          });
+          text.appendChild(timerLbl);
+          const timerEl = UI.el("div", "gm-timer-display" + (session.timer.running ? " is-running" : ""), {
+            id: "gm-timer-display",
+            text: G.formatDuration(G.getTimerElapsedMs(session))
+          });
+          text.appendChild(timerEl);
+        } else {
+          text.appendChild(UI.el("p", "gm-sub", { text: "Glove-friendly · minimal typing" }));
+        }
+        headerEl.appendChild(back);
+        headerEl.appendChild(text);
+      }
+
+      function updateTimerDisplay() {
+        reloadVehicle();
+        const displayEl = document.getElementById("gm-timer-display");
+        const labelEl = document.getElementById("gm-timer-lbl");
+        if (!session) return;
+        const running = !!(session.timer && session.timer.running);
+        const elapsed = G.formatDuration(G.getTimerElapsedMs(session));
+        if (displayEl) {
+          displayEl.textContent = elapsed;
+          displayEl.classList.toggle("is-running", running);
+        }
+        if (labelEl) {
+          labelEl.textContent = running ? "Work timer (running)" : "Work timer (paused)";
+        }
+      }
+
+      function startTimerTick() {
+        if (timerTick) clearInterval(timerTick);
+        timerTick = setInterval(updateTimerDisplay, 1000);
+      }
+
+      function renderIdle() {
+        mainEl.innerHTML = "";
+        const hint = UI.el("p", "gm-voice-hint", {
+          text: "Start a session to track photos, notes, tasks, and parts while you work."
+        });
+        const cta = UI.el("button", "gm-start-cta", { type: "button", text: "Start Garage Session" });
+        cta.addEventListener("click", () => {
+          G.startSession(vehicleId);
+          reloadVehicle();
+          render();
+        });
+        mainEl.appendChild(hint);
+        mainEl.appendChild(cta);
+      }
+
+      function renderActive() {
+        reloadVehicle();
+        if (!session) {
+          renderIdle();
+          return;
+        }
+        mainEl.innerHTML = "";
+        mainEl.appendChild(UI.renderSessionStats(session));
+        const actions = UI.el("div", "gm-actions");
+        const timerRunning = !!(session.timer && session.timer.running);
+        actions.appendChild(UI.actionButton("Add Task", "✓", "primary", () => openTaskSheet()));
+        actions.appendChild(UI.actionButton("Add Part", "⚙", "primary", () => openPartSheet()));
+        actions.appendChild(UI.actionButton("Take Photo", "📷", "accent", () => openPhotoPicker()));
+        actions.appendChild(UI.actionButton(
+          timerRunning ? "Pause Timer" : "Start Timer",
+          "⏱",
+          "timer",
+          () => {
+            G.toggleTimer(vehicleId);
+            reloadVehicle();
+            renderHeader();
+            renderActive();
+            startTimerTick();
+          },
+          { active: timerRunning }
+        ));
+        actions.appendChild(UI.actionButton("Active Task Note", "🎤", "voice", () => openVoiceNoteSheet()));
+        actions.appendChild(UI.actionButton("Build Focus", "📝", "default", () => openQuickNoteSheet()));
+        mainEl.appendChild(actions);
+        mainEl.appendChild(UI.el("p", "gm-eyebrow", { text: "Live feed", style: "margin:0.5rem 0 0.35rem" }));
+        mainEl.appendChild(UI.renderFeed(session));
+        const endBtn = UI.el("button", "gm-end-btn", { type: "button", text: "End Garage Session" });
+        endBtn.addEventListener("click", () => {
+          if (!confirm("End this garage session and save summary to your build journal?")) return;
+          const ended = G.endSession(vehicleId);
+          reloadVehicle();
+          if (ended) renderSummary(ended);
+          else render();
+        });
+        mainEl.appendChild(endBtn);
+      }
+
+      function renderSummary(endedSession) {
+        mainEl.innerHTML = "";
+        mainEl.appendChild(UI.el("p", "gm-eyebrow", { text: "Session complete" }));
+        const card = UI.el("div", "gm-summary-card");
+        card.appendChild(UI.el("pre", "gm-summary-pre", { text: endedSession.summary || G.generateSessionSummary(endedSession, vehicle) }));
+        mainEl.appendChild(card);
+        const again = UI.el("button", "gm-start-cta", { type: "button", text: "Start Another Session" });
+        again.style.minHeight = "72px";
+        again.style.fontSize = "1rem";
+        again.addEventListener("click", () => {
+          G.startSession(vehicleId);
+          reloadVehicle();
+          render();
+        });
+        mainEl.appendChild(again);
+        stopTimerTick();
+      }
+
+      function render() {
+        reloadVehicle();
+        renderHeader();
+        if (params.get("summary") === "1" && vehicle && vehicle.garageSessions && vehicle.garageSessions[0]) {
+          const last = vehicle.garageSessions.find((s) => s.endedAt) || vehicle.garageSessions[0];
+          renderSummary(G.normalizeSession(last, vehicleId));
+          return;
+        }
+        if (session) {
+          renderActive();
+          startTimerTick();
+        } else {
+          renderIdle();
+          stopTimerTick();
+        }
+      }
+
+      function stopTimerTick() {
+        if (timerTick) { clearInterval(timerTick); timerTick = null; }
+      }
+
+      function openPhotoPicker() {
+        const body = UI.el("div", "");
+        const cam = UI.el("button", "gm-pick-btn", { type: "button", text: "Camera" });
+        cam.addEventListener("click", () => { closeSheet(); photoInput.click(); });
+        const gal = UI.el("button", "gm-pick-btn", { type: "button", text: "Photo Library" });
+        gal.addEventListener("click", () => { closeSheet(); photoGalleryInput.click(); });
+        body.appendChild(cam);
+        body.appendChild(gal);
+        openSheet("Take Photo", body);
+      }
+
+      async function handlePhotoFile(file) {
+        if (!file) return;
+        try {
+          await G.addSessionPhoto(vehicleId, file);
+          reloadVehicle();
+          render();
+        } catch (_e) {
+          alert("Could not save photo.");
+        }
+      }
+
+      photoInput.addEventListener("change", () => {
+        handlePhotoFile(photoInput.files && photoInput.files[0]);
+        photoInput.value = "";
+      });
+      photoGalleryInput.addEventListener("change", () => {
+        handlePhotoFile(photoGalleryInput.files && photoGalleryInput.files[0]);
+        photoGalleryInput.value = "";
+      });
+
+      function openTaskSheet() {
+        reloadVehicle();
+        const open = G.listOpenTasks(vehicle);
+        const body = UI.el("div", "gm-pick-list");
+        if (open.length) {
+          open.slice(0, 20).forEach((t) => {
+            const btn = UI.el("button", "gm-pick-btn", { type: "button" });
+            btn.appendChild(document.createTextNode(t.name || "Task"));
+            const cat = UI.el("small", "", { text: t.category || "Tap to mark complete" });
+            btn.appendChild(cat);
+            btn.addEventListener("click", () => {
+              G.recordTaskCompleted(vehicleId, t.id, t.name);
+              closeSheet();
+              reloadVehicle();
+              render();
+            });
+            body.appendChild(btn);
+          });
+        } else {
+          body.appendChild(UI.el("p", "gm-voice-hint", { text: "No open tasks. Add one below." }));
+        }
+        const addBtn = UI.el("button", "gm-pick-btn", { type: "button", text: "+ Quick add task (voice)" });
+        addBtn.addEventListener("click", () => {
+          closeSheet();
+          openQuickAddSheet("task");
+        });
+        body.appendChild(addBtn);
+        openSheet("Add Task", body);
+      }
+
+      function openPartSheet() {
+        reloadVehicle();
+        const parts = G.listInstallableParts(vehicle);
+        const body = UI.el("div", "gm-pick-list");
+        if (parts.length) {
+          parts.slice(0, 20).forEach((p) => {
+            const btn = UI.el("button", "gm-pick-btn", { type: "button" });
+            btn.appendChild(document.createTextNode(p.name || "Part"));
+            const st = window.BuildPilotInventory
+              ? window.BuildPilotInventory.normalizePartStatus(p.status)
+              : (p.status || "");
+            btn.appendChild(UI.el("small", "", { text: `${st} · tap when installed` }));
+            btn.addEventListener("click", () => {
+              G.recordPartInstalled(vehicleId, p.id, p.name);
+              closeSheet();
+              reloadVehicle();
+              render();
+            });
+            body.appendChild(btn);
+          });
+        } else {
+          body.appendChild(UI.el("p", "gm-voice-hint", { text: "No parts to install. Add one below." }));
+        }
+        const addBtn = UI.el("button", "gm-pick-btn", { type: "button", text: "+ Quick add part (voice)" });
+        addBtn.addEventListener("click", () => {
+          closeSheet();
+          openQuickAddSheet("part");
+        });
+        body.appendChild(addBtn);
+        openSheet("Install Part", body);
+      }
+
+      let selectedCategory = "Engine";
+
+      function openQuickAddSheet(kind) {
+        const body = UI.el("div", "");
+        const chips = UI.el("div", "gm-quick-chips");
+        CATEGORIES.forEach((c) => {
+          const chip = UI.el("button", "gm-chip" + (c === selectedCategory ? " is-selected" : ""), {
+            type: "button",
+            text: c.split(" ")[0]
+          });
+          chip.title = c;
+          chip.addEventListener("click", () => {
+            selectedCategory = c;
+            chips.querySelectorAll(".gm-chip").forEach((x) => x.classList.remove("is-selected"));
+            chip.classList.add("is-selected");
+          });
+          chips.appendChild(chip);
+        });
+        body.appendChild(chips);
+        const transcript = UI.el("div", "gm-voice-transcript", { id: "gm-quick-transcript", text: "Hold mic and say the name…" });
+        body.appendChild(transcript);
+        const mic = UI.el("button", "gm-action gm-action--voice", { type: "button" });
+        mic.appendChild(UI.el("span", "gm-action-icon", { text: "🎤" }));
+        mic.appendChild(UI.el("span", "gm-action-label", { text: "Hold to speak" }));
+        let quickText = "";
+        wireHoldToTalk(mic, (text) => {
+          quickText = text;
+          transcript.textContent = text || "…";
+        });
+        const save = UI.el("button", "gm-voice-save", { type: "button", text: kind === "task" ? "Save Task" : "Save Part" });
+        save.addEventListener("click", () => {
+          const nm = quickText.trim();
+          if (!nm) { alert("Say or type a name first."); return; }
+          if (kind === "task") G.quickAddTask(vehicleId, nm, selectedCategory);
+          else G.quickAddPart(vehicleId, nm, selectedCategory);
+          closeSheet();
+          reloadVehicle();
+          render();
+        });
+        body.appendChild(mic);
+        body.appendChild(save);
+        openSheet(kind === "task" ? "Quick Add Task" : "Quick Add Part", body);
+      }
+
+      function openQuickNoteSheet() {
+        const body = UI.el("div", "");
+        const presets = ["Torque spec checked", "Needs parts", "Blocked on parts", "Test fit OK", "Outsourced fab"];
+        const chips = UI.el("div", "gm-quick-chips");
+        presets.forEach((p) => {
+          const chip = UI.el("button", "gm-chip", { type: "button", text: p });
+          chip.addEventListener("click", () => {
+            G.addSessionNote(vehicleId, p, "typed");
+            closeSheet();
+            reloadVehicle();
+            render();
+          });
+          chips.appendChild(chip);
+        });
+        body.appendChild(chips);
+        const save = UI.el("button", "gm-voice-save", { type: "button", text: "Record active task note instead" });
+        save.addEventListener("click", () => {
+          closeSheet();
+          openVoiceNoteSheet();
+        });
+        body.appendChild(save);
+        openSheet("Current Build Focus", body);
+      }
+
+      function stopVoice() {
+        if (voiceRec) {
+          try { voiceRec.stop(); } catch (_e) { /* */ }
+          voiceRec = null;
+        }
+      }
+
+      function wireHoldToTalk(btn, onFinal) {
+        if (!G.speechSupported()) {
+          btn.addEventListener("click", () => {
+            const t = prompt("Type note (voice unavailable):", "");
+            if (t) onFinal(t);
+          });
+          return;
+        }
+        let interim = "";
+        const start = () => {
+          stopVoice();
+          voiceTranscript = "";
+          interim = "";
+          btn.classList.add("is-listening");
+          voiceRec = G.createVoiceRecognizer();
+          if (!voiceRec) return;
+          voiceRec.onresult = (e) => {
+            let chunk = "";
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+              chunk += e.results[i][0].transcript;
+            }
+            if (e.results[e.results.length - 1].isFinal) {
+              voiceTranscript += chunk;
+              interim = "";
+            } else {
+              interim = chunk;
+            }
+            onFinal((voiceTranscript + interim).trim());
+          };
+          voiceRec.onerror = () => btn.classList.remove("is-listening");
+          voiceRec.onend = () => btn.classList.remove("is-listening");
+          try { voiceRec.start(); } catch (_e) { /* */ }
+        };
+        const end = () => {
+          stopVoice();
+          btn.classList.remove("is-listening");
+          onFinal((voiceTranscript + interim).trim());
+        };
+        btn.addEventListener("pointerdown", (e) => { e.preventDefault(); start(); });
+        btn.addEventListener("pointerup", end);
+        btn.addEventListener("pointerleave", end);
+        btn.addEventListener("pointercancel", end);
+      }
+
+      function openVoiceNoteSheet() {
+        const body = UI.el("div", "");
+        const hint = UI.el("p", "gm-voice-hint", {
+          text: G.speechSupported() ? "Hold the button and speak. Release when done." : "Voice not supported — use quick notes instead."
+        });
+        const transcript = UI.el("div", "gm-voice-transcript", { id: "gm-voice-transcript", text: "…" });
+        const mic = UI.el("button", "gm-action gm-action--voice", { type: "button" });
+        mic.style.marginBottom = "0.75rem";
+        mic.appendChild(UI.el("span", "gm-action-icon", { text: "🎤" }));
+        mic.appendChild(UI.el("span", "gm-action-label", { text: "Hold to record" }));
+        let finalText = "";
+        wireHoldToTalk(mic, (t) => {
+          finalText = t;
+          transcript.textContent = t || "…";
+        });
+        const save = UI.el("button", "gm-voice-save", { type: "button", text: "Save Active Task Note" });
+        save.addEventListener("click", () => {
+          if (!finalText.trim()) { alert("Record a note first."); return; }
+          G.addSessionNote(vehicleId, finalText.trim(), "voice");
+          closeSheet();
+          reloadVehicle();
+          render();
+        });
+        body.appendChild(hint);
+        body.appendChild(transcript);
+        body.appendChild(mic);
+        body.appendChild(save);
+        openSheet("Active Task Note", body);
+      }
+
+      if (!vehicleId) {
+        mainEl.innerHTML = "<p class='gm-voice-hint'>No build selected. Open Garage Mode from your project vehicle dashboard.</p>";
+      } else {
+        reloadVehicle();
+        if (!vehicle) {
+          mainEl.innerHTML = "<p class='gm-voice-hint'>Project vehicle not found. <a href=\"index.html\">Return to My Builds</a>.</p>";
+        } else if (!G.isProjectVehicle(vehicle)) {
+          window.location.replace("index.html");
+        } else {
+          render();
+        }
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          reloadVehicle();
+          updateTimerDisplay();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

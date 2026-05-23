@@ -1,0 +1,4446 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="default" style="color-scheme: dark;">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>BuildPilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@300;400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/buildpilot-core.css" />
+  <link rel="stylesheet" href="css/buildpilot-intelligence.css" />
+  <link rel="stylesheet" href="css/buildpilot-ux.css" />
+  <link rel="stylesheet" href="css/buildpilot-premium-overrides.css" />
+  <style>
+    :root {
+      --svc-red: #FF3B30;
+      --svc-cobalt: #3b9eff;
+      --svc-cobalt-hi: #6eb8ff;
+      --svc-cobalt-lo: #2563eb;
+      --tick: 2px;
+
+      --font-stack: var(--bp-font-body);
+      --mono-stack: 'JetBrains Mono', 'Courier New', Courier, monospace;
+
+      --motion-ease-fluid: cubic-bezier(0.4, 0, 0.2, 1);
+      --motion-duration-fluid: 0.3s;
+      --fluid-collapse-max: 800px;
+
+      /* Mobile toolbar / safe-area (iOS HIG + Material) */
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --header-toolbar-margin: 0.75rem;
+      --header-info-btn-size: 3rem;
+    }
+
+    .dashboard-info-btn {
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 52%, #242426 100%);
+      color: #ffffff;
+      font-family: var(--mono-stack);
+      font-size: 0.9rem;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .dashboard-info-btn--header {
+      position: static;
+      width: var(--header-info-btn-size);
+      height: var(--header-info-btn-size);
+      min-width: var(--header-info-btn-size);
+      min-height: var(--header-info-btn-size);
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+    .dashboard-info-btn.bubble-tactile {
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.3),
+        0 2px 4px -1px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .dashboard-info-btn:hover { background: linear-gradient(180deg, #444446 0%, #353537 52%, #2c2c2e 100%); }
+    .dashboard-info-btn:focus-visible {
+      outline: 2px solid var(--svc-cobalt-hi);
+      outline-offset: 2px;
+    }
+    .app-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+      flex: 1;
+    }
+    .app-header-logo {
+      height: 2.125rem;
+      width: auto;
+      max-height: 2.25rem;
+      object-fit: contain;
+      flex-shrink: 0;
+      display: block;
+    }
+    .app-header-title {
+      white-space: nowrap;
+    }
+    .app-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-shrink: 0;
+    }
+    .dashboard-config-btn {
+      flex-shrink: 0;
+      width: var(--header-info-btn-size);
+      height: var(--header-info-btn-size);
+      min-width: var(--header-info-btn-size);
+      min-height: var(--header-info-btn-size);
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 52%, #242426 100%);
+      color: #ffffff;
+      font-size: 1.15rem;
+      font-weight: 400;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    .dashboard-config-btn.bubble-tactile {
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.3),
+        0 2px 4px -1px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .dashboard-config-btn:hover {
+      background: linear-gradient(180deg, #444446 0%, #353537 52%, #2c2c2e 100%);
+    }
+    .dashboard-config-btn:focus-visible {
+      outline: 2px solid var(--svc-cobalt-hi);
+      outline-offset: 2px;
+    }
+    .project-stats-insights-mount {
+      margin-top: 0.85rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--svc-border-subtle);
+    }
+    .project-stats-insights-label {
+      margin: 0 0 0.55rem;
+      font-family: var(--mono-stack);
+      font-size: 0.52rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--svc-text-subtle);
+    }
+    .bi-garage-embedded .bi-metrics {
+      margin-bottom: 0.5rem;
+    }
+    .user-manual-version {
+      margin: 0;
+      font-family: var(--mono-stack);
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--svc-text-subtle);
+      white-space: nowrap;
+    }
+    .info-panel-sheet,
+    .user-manual-sheet {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+      max-width: min(420px, 95vw);
+      max-height: min(88vh, 720px);
+      background: #121212;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .info-panel-header {
+      position: relative;
+      padding: 1.25rem 1.25rem 1rem;
+      padding-right: 7.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .info-panel-version {
+      position: absolute;
+      top: 1.15rem;
+      right: 1.15rem;
+      margin: 0;
+      font-family: var(--mono-stack);
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--svc-text-subtle);
+      white-space: nowrap;
+    }
+    .info-panel-title {
+      margin: 0;
+      color: #ffffff;
+      font-family: 'Archivo', var(--font-stack);
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .info-panel-tagline {
+      margin: 0.4rem 0 0;
+      color: rgba(236, 238, 242, 0.72);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+    .info-panel-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 1rem 1.25rem;
+    }
+    .info-panel-hint {
+      margin: 0;
+      color: rgba(236, 238, 242, 0.65);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .info-panel-footer {
+      padding: 0.85rem 1.25rem 1.25rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      background: #0f0f0f;
+    }
+    .info-panel-action-btn {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #2a2a2c 0%, #1e1e20 100%);
+      color: #ffffff;
+      font-family: 'Archivo', var(--font-stack);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+    .user-manual-intro {
+      margin: 0;
+      padding: 1rem 1.25rem 0.85rem;
+      color: rgba(236, 238, 242, 0.78);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+    .user-manual-legend-block {
+      padding: 0.65rem 1.25rem 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .user-manual-legend-block:last-child {
+      border-bottom: none;
+    }
+    .user-manual-legend-title {
+      margin: 0 0 0.55rem;
+      color: rgba(236, 238, 242, 0.55);
+      font-family: var(--mono-stack);
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .user-manual-legend-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .user-manual-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .user-manual-swatch {
+      flex-shrink: 0;
+      width: 2.25rem;
+      height: 1.35rem;
+      border-radius: 6px;
+      border: 2px solid currentColor;
+      background: transparent;
+      box-sizing: border-box;
+    }
+    .user-manual-swatch--fill {
+      background: color-mix(in srgb, currentColor 18%, transparent);
+    }
+    .user-manual-legend-label {
+      flex: 1 1 auto;
+      min-width: 0;
+      color: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .user-manual-legend-desc {
+      display: block;
+      margin-top: 0.1rem;
+      color: rgba(236, 238, 242, 0.62);
+      font-size: 0.72rem;
+      font-weight: 500;
+    }
+    /* Material-style instruction bullets (filled circle, 24px inset) */
+    .user-manual-bullet-list {
+      list-style: none;
+      margin: 0;
+      padding: 0.5rem 0 0.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .user-manual-bullet-list--compact {
+      gap: 0.65rem;
+    }
+    .user-manual-bullet-list li {
+      position: relative;
+      margin: 0;
+      padding: 0 0 0 1.5rem;
+      color: rgba(236, 238, 242, 0.88);
+      font-size: 0.82rem;
+      line-height: 1.55;
+      letter-spacing: 0.01em;
+    }
+    .user-manual-bullet-list li::before {
+      content: "";
+      position: absolute;
+      left: 0.35rem;
+      top: 0.62em;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(236, 238, 242, 0.72);
+      transform: translateY(-50%);
+      box-shadow: none;
+    }
+    .user-manual-bullet-list li strong {
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .user-manual-intro strong,
+    .user-manual-section-heading strong,
+    .user-manual-legend-desc strong {
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .user-manual-header--guide {
+      padding-right: 1.25rem;
+    }
+    .user-manual-header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .user-manual-back-btn {
+      flex-shrink: 0;
+      min-height: 44px;
+      padding: 0.35rem 0.65rem;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--svc-cobalt-hi);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    .about-modal-prose {
+      padding: 0.9rem 1.25rem 1.1rem;
+    }
+    .about-modal-p {
+      margin: 0 0 1.05rem;
+      color: rgba(236, 238, 242, 0.9);
+      font-family: var(--font-stack);
+      font-size: 0.84rem;
+      font-weight: 400;
+      line-height: 1.68;
+      letter-spacing: 0.01em;
+    }
+    .about-modal-p:last-child {
+      margin-bottom: 0;
+    }
+    .about-modal-p strong {
+      color: #ffffff;
+      font-weight: 800;
+    }
+    .about-modal-divider {
+      margin: 1.15rem 0 1.2rem;
+      color: rgba(236, 238, 242, 0.35);
+      font-family: var(--mono-stack);
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      text-align: center;
+      user-select: none;
+    }
+    .about-modal-section-title {
+      margin: 0 0 0.95rem;
+      color: #ffffff;
+      font-family: 'Archivo', var(--font-stack);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      line-height: 1.4;
+    }
+    .about-modal-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.95rem;
+    }
+    .about-modal-list li {
+      position: relative;
+      margin: 0;
+      padding-left: 1.05rem;
+      color: rgba(236, 238, 242, 0.88);
+      font-family: var(--font-stack);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      letter-spacing: 0.01em;
+    }
+    .about-modal-list li::before {
+      content: "\2022";
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--svc-cobalt-hi);
+      font-weight: 700;
+    }
+    .user-manual-body--scroll {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .mission-modal-body {
+      font-family: var(--mono-stack);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--svc-text-soft);
+    }
+    .mission-modal-stage {
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: opacity, transform;
+    }
+    .mission-modal-stage.is-swapping {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    .mission-modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .mission-modal-action-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid var(--svc-cobalt-hi);
+      border-radius: 7px;
+      background: transparent;
+      color: var(--svc-cobalt-hi);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      min-height: 40px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mission-modal-action-btn:hover {
+      background: rgba(93, 155, 255, 0.12);
+    }
+    .mission-support-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.15rem;
+    }
+    .mission-support-form-title {
+      margin: 0;
+      font-family: 'Archivo', var(--font-stack);
+      font-size: 0.92rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      line-height: 1.35;
+      color: var(--svc-text);
+    }
+    .mission-support-field-label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-family: 'JetBrains Mono', var(--mono-stack);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(200, 205, 214, 0.75);
+    }
+    .mission-support-textarea,
+    .mission-support-email-input {
+      width: 100%;
+      box-sizing: border-box;
+      background: #1a1a1a;
+      color: #eceef2;
+      border: 1px solid #222222;
+      border-radius: 10px;
+      font-family: var(--font-stack);
+      font-size: 0.88rem;
+      line-height: 1.55;
+      transition: border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mission-support-textarea {
+      min-height: 7.5rem;
+      padding: 0.75rem 0.85rem;
+      resize: vertical;
+    }
+    .mission-support-email-input {
+      min-height: 44px;
+      padding: 0.65rem 0.85rem;
+    }
+    .mission-support-textarea:focus,
+    .mission-support-email-input:focus {
+      outline: none;
+      border-color: var(--svc-cobalt);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    }
+    .mission-support-textarea::placeholder,
+    .mission-support-email-input::placeholder {
+      color: rgba(176, 176, 181, 0.72);
+    }
+    .mission-support-btn-row {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.35rem;
+    }
+    .mission-support-send-btn {
+      flex: 2;
+      min-height: 48px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #24884a 0%, #1d7340 52%, #145a32 100%);
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mission-support-send-btn.bubble-tactile {
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.3),
+        0 2px 4px -1px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 16px rgba(29, 115, 64, 0.28);
+    }
+    .mission-support-send-btn:hover {
+      box-shadow:
+        0 6px 10px -2px rgba(0, 0, 0, 0.34),
+        0 3px 6px -1px rgba(0, 0, 0, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 0 24px rgba(29, 115, 64, 0.4);
+    }
+    .mission-support-send-btn:active {
+      background: linear-gradient(180deg, #1d7340 0%, #145a32 100%);
+      transform: scale(0.95) translateZ(0);
+    }
+    .mission-support-back-btn {
+      flex: 1;
+      min-height: 48px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 52%, #242426 100%);
+      color: #ffffff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mission-support-back-btn.bubble-tactile {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 2px 4px -1px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    .mission-support-textarea.is-invalid {
+      border-color: rgba(220, 80, 80, 0.65);
+      box-shadow: 0 0 0 3px rgba(220, 80, 80, 0.18);
+    }
+    .mission-support-confirmation {
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--svc-text);
+      padding: 0.75rem 0 0.25rem;
+      line-height: 1.65;
+    }
+    .mission-support-error {
+      margin: 0;
+      font-size: 0.72rem;
+      color: rgba(255, 140, 140, 0.95);
+      line-height: 1.45;
+    }
+    .mission-support-send-btn.is-transmitting,
+    .mission-support-back-btn.is-transmitting {
+      opacity: 0.72;
+      pointer-events: none;
+      cursor: wait;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    button, [role="button"], summary { touch-action: manipulation; }
+
+    button,
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"],
+    [role="button"],
+    .dashboard-info-btn,
+    .dashboard-config-btn,
+    .dashboard-toolbar-btn,
+    .templates-menu-btn,
+    .vault-export-btn,
+    .vault-import-btn,
+    .user-manual-dismiss-btn,
+    .info-panel-action-btn,
+    .user-manual-back-btn,
+    .about-modal-p,
+    .mission-modal-action-btn,
+    .mission-support-send-btn,
+    .mission-support-back-btn,
+    .add-vehicle-btn,
+    .bulk-btn,
+    .vehicle-delete-btn,
+    .modal-btn-row button,
+    a.vehicle-card-body {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+    button:not(:disabled):active,
+    input[type="button"]:not(:disabled):active,
+    input[type="submit"]:not(:disabled):active,
+    input[type="reset"]:not(:disabled):active,
+    [role="button"]:not([aria-disabled="true"]):active,
+    .dashboard-info-btn:active,
+    .dashboard-config-btn:active,
+    .dashboard-toolbar-btn:active,
+    .templates-menu-btn:active,
+    .vault-export-btn:active,
+    .vault-import-btn:active,
+    .user-manual-dismiss-btn:active,
+    .info-panel-action-btn:active,
+    .user-manual-back-btn:active,
+    .mission-modal-action-btn:active,
+    .mission-support-send-btn:active,
+    .mission-support-back-btn:active,
+    .add-vehicle-btn:active,
+    .bulk-btn:active,
+    .vehicle-delete-btn:active,
+    .modal-btn-row button:active,
+    a.vehicle-card-body:active {
+      transform: scale(0.95) translateZ(0);
+    }
+
+    body {
+      margin: 0;
+      background: #000000;
+      color: var(--svc-text);
+      font-family: var(--font-stack);
+      font-size: 16px;
+      letter-spacing: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { min-height: 48px; }
+
+    .main-shell {
+      background: #000000;
+      padding: 0;
+      padding-left: max(0px, env(safe-area-inset-left));
+      padding-right: max(0px, env(safe-area-inset-right));
+      padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    }
+    .main-shell-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 1.1rem 1.15rem 2rem;
+    }
+    @media (min-width: 390px) {
+      .main-shell-inner {
+        padding-left: 1.125rem;
+        padding-right: 1.125rem;
+      }
+    }
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      width: 100%;
+      padding-top: 0.35rem;
+      padding-bottom: 0.35rem;
+      margin: 0;
+      text-align: center;
+    }
+    .brand-header-logo {
+      display: block;
+      max-height: 76px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    .brand-header-title {
+      margin: 0;
+      font-family: 'Archivo', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.75rem, 6.5vw, 2.25rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: #ffffff;
+      text-align: center;
+    }
+    .widget {
+      padding: 1.15rem 1.2rem;
+      margin-bottom: 1rem;
+      border-radius: 14px;
+    }
+    .dashboard-section-title,
+    .dashboard-label,
+    .dashboard-breakdown,
+    .breakdown-stat {
+      color: var(--svc-text);
+    }
+    .dashboard-section-title {
+      margin: 0;
+      font-family: 'Archivo', var(--font-stack);
+      font-weight: 800;
+      font-size: 0.82rem;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      color: var(--bp-text-silver);
+    }
+    .font-archivo {
+      font-family: 'Archivo', var(--font-stack);
+    }
+    .dashboard-label {
+      font-weight: 300;
+      font-size: 0.8125rem;
+      letter-spacing: 0.08em;
+    }
+    .dashboard-breakdown,
+    .breakdown-stat,
+    .vehicle-total-investment,
+    .card-progress-label,
+    .card-financial-lines {
+      font-family: var(--mono-stack);
+    }
+    #garage-purchase-price {
+      color: var(--svc-text);
+      font-size: 1.03rem;
+      font-weight: 700;
+    }
+    #garage-total-investment {
+      color: #ffffff;
+      font-size: 1.24rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+    .dashboard-breakdown,
+    .breakdown-stat {
+      color: var(--svc-text-soft);
+    }
+
+    /* Garage breakdown: labels left, bold values right (matches vehicle-detail reg colors mindset) */
+    .garage-breakdown-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.35rem 1rem;
+      align-items: baseline;
+      width: 100%;
+      font-size: 0.75rem;
+      font-family: var(--mono-stack);
+    }
+    .garage-breakdown-head {
+      grid-column: 1 / -1;
+      font-family: var(--font-stack);
+      font-weight: 700;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--svc-text-soft);
+      margin-bottom: 0.15rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--svc-border);
+    }
+    .garage-breakdown-label {
+      color: var(--svc-text-soft);
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .garage-breakdown-value {
+      color: var(--svc-text);
+      font-weight: 800;
+      text-align: right;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bubble-tactile {
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.3),
+        0 2px 4px -1px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .my-builds-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin: 0 0 0.25rem;
+    }
+    .my-builds-drawer-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      width: 100%;
+    }
+    .my-builds-actions__toolbar {
+      display: flex;
+      align-items: stretch;
+      gap: 0.45rem;
+      width: 100%;
+    }
+    .my-builds-actions__toolbar .dashboard-toolbar-btn {
+      flex: 1;
+      width: auto;
+      min-width: 0;
+    }
+    .my-builds-actions__toolbar .dashboard-toolbar-btn.project-stats-btn {
+      min-height: 3.5rem;
+      height: auto;
+      padding: 0.5rem 1.9rem 0.5rem 0.5rem;
+      align-items: center;
+      justify-content: center;
+    }
+    .my-builds-actions__toolbar .project-stats-btn > span {
+      display: block;
+      width: 100%;
+      max-width: 4.65rem;
+      margin: 0 auto;
+      box-sizing: border-box;
+      white-space: normal;
+      line-height: 1.28;
+      text-wrap: balance;
+    }
+    #project-stats-toggle .project-stats-btn__label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      max-width: none;
+      margin: 0 auto;
+      text-align: center;
+    }
+    #project-stats-toggle .project-stats-btn__line {
+      display: block;
+      line-height: 1.28;
+    }
+    #templates-toggle > span {
+      max-width: none;
+    }
+    .my-builds-drawer-stack .project-stats-collapse-inner {
+      padding-top: 0.45rem;
+    }
+    .templates-menu {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.45rem;
+      width: 100%;
+    }
+    .templates-menu-btn {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      border: none;
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      background: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 52%, #242426 100%);
+      color: #ffffff;
+      font-family: var(--font-stack);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1.1;
+      cursor: pointer;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .templates-menu-btn.bubble-tactile {
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 2px 4px -1px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    .templates-menu-btn:hover {
+      background: linear-gradient(180deg, #444446 0%, #353537 52%, #2c2c2e 100%);
+    }
+    .vault-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.45rem;
+      width: 100%;
+      margin-top: 0.15rem;
+      padding-top: 0.55rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .templates-backup-hint {
+      margin: 0 0 0.35rem;
+      font-size: 0.72rem;
+      line-height: 1.45;
+      color: var(--svc-text-soft);
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      text-transform: none;
+    }
+    .vault-export-btn,
+    .vault-import-btn {
+      width: 100%;
+      min-width: 0;
+      min-height: 44px;
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      font-family: var(--font-stack);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1.1;
+      cursor: pointer;
+      text-align: center;
+      box-sizing: border-box;
+      transition: background 160ms, box-shadow 160ms, transform 100ms, border-color 160ms;
+    }
+    .vault-export-btn {
+      border: none;
+      color: #ffffff;
+      background: linear-gradient(180deg, #5c5c60 0%, #48484a 52%, #3a3a3c 100%);
+    }
+    .vault-export-btn.bubble-tactile {
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow:
+        0 2px 4px -1px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .vault-export-btn:hover {
+      background: linear-gradient(180deg, #66666a 0%, #525254 52%, #444446 100%);
+    }
+    .vault-export-btn:active {
+      background: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 52%, #242426 100%);
+    }
+    .vault-import-btn {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+    }
+    .vault-import-btn.bubble-tactile {
+      box-shadow:
+        0 2px 4px -1px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .vault-import-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.38);
+    }
+    .vault-import-btn:active {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .project-stats-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      text-align: center;
+    }
+    .project-stats-chevron {
+      position: absolute;
+      right: 0.55rem;
+      top: 50%;
+      width: 0.75rem;
+      height: 0.75rem;
+      flex-shrink: 0;
+      pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0.92;
+      transform: translateY(-50%) translateZ(0);
+    }
+    .project-stats-btn[aria-expanded="true"] .project-stats-chevron {
+      transform: translateY(-50%) rotate(180deg) translateZ(0);
+    }
+    .project-stats-collapse {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: max-height, opacity;
+      transform: translateZ(0);
+    }
+    .project-stats-collapse.is-open {
+      opacity: 1;
+      max-height: var(--fluid-collapse-measured, 800px);
+    }
+    .project-stats-collapse-inner {
+      overflow: visible;
+      min-height: 0;
+    }
+    .project-stats-widget {
+      margin-bottom: 1rem;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .project-stats-collapse,
+      .project-stats-chevron,
+      button,
+      [role="button"],
+      a.vehicle-card-body {
+        transition: none !important;
+      }
+      button:not(:disabled):active,
+      [role="button"]:not([aria-disabled="true"]):active,
+      a.vehicle-card-body:active {
+        transform: none !important;
+      }
+    }
+
+    .list-box {
+      border: none;
+      border-radius: 0;
+      overflow: visible;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin: 0;
+    }
+    /* -- Vehicle Card -- */
+    .list-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .list-stack.is-empty {
+      justify-content: center;
+      align-items: stretch;
+      min-height: 5.75rem;
+    }
+
+    .vehicle-dashboard-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      padding-bottom: 0.25rem;
+      margin: 0;
+      padding: 0;
+    }
+    .vehicle-dashboard-section {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.65rem;
+    }
+    .vehicle-dashboard-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      min-height: 44px;
+      margin: 0;
+      padding: 0;
+    }
+    .vehicle-dashboard-section-head .dashboard-section-title {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .vehicle-dashboard-section--my-builds {
+      gap: 0.65rem;
+    }
+    .vehicle-section-tools {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.65rem;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .vehicle-list-panel {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin: 0;
+    }
+    .vehicle-dashboard-section[hidden] { display: none !important; }
+    .vehicle-section-empty {
+      min-height: 5.5rem;
+    }
+    /* Vehicle cards: layout + hierarchy in css/buildpilot-ux.css */
+    .vehicle-card-body {
+      text-decoration: none;
+      color: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .vehicle-card-body:focus-visible {
+      outline: 2px solid var(--bp-chapter-in-progress, #2196f3);
+      outline-offset: -2px;
+    }
+
+    #garage-purchase-price, #garage-total-investment { text-shadow: none; }
+
+    .reg-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.6rem;
+      font-family: var(--font-stack);
+      font-size: 0.62rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: none;
+      color: #ffffff;
+      background: #3a3a3c;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    /* Align with vehicle-detail.html registration button colors */
+    .reg-badge-not-set {
+      background: var(--svc-cobalt); /* blue ? not set */
+      color: #ffffff;
+    }
+    .reg-badge-nonop {
+      background: #3a3a3c; /* grey ? non-op */
+      color: #ffffff;
+    }
+    .reg-badge-current,
+    .reg-badge-green {
+      background: #1d7340; /* green ? current (>30 days) */
+      color: #ffffff;
+    }
+    .reg-badge-due,
+    .reg-badge-yellow {
+      background: #B8860B; /* gold ? due within 30 days */
+      color: #ffffff;
+    }
+    .reg-badge-expired,
+    .reg-badge-red {
+      background: var(--svc-red); /* red ? expired */
+      color: #ffffff;
+    }
+    .reg-badge-gray {
+      background: #3a3a3c;
+      color: #ebebf5;
+    }
+
+    .vehicle-delete-btn {
+      position: absolute;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 140ms, transform 100ms;
+    }
+    .vehicle-delete-btn:active { transform: scale(0.95) translateZ(0); }
+    .add-vehicle-wrap { margin: 0; }
+    .bulk-actions-wrap { margin: 0; }
+    .bulk-actions-row {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 0.65rem;
+      width: 100%;
+    }
+    .bulk-btn {
+      flex: 1;
+      cursor: pointer;
+    }
+    .bulk-upload-btn {
+      border: none;
+      color: #ffffff;
+      background: var(--svc-red);
+    }
+    .bulk-upload-btn:hover { background: #e0352a; }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+        max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--svc-panel);
+      border: 1px solid var(--svc-border);
+      padding: 1.25rem;
+      min-width: min(320px, 100%);
+      max-width: 95vw;
+      max-height: min(90vh, calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      box-shadow: 0 32px 64px rgba(0,0,0,0.6);
+      border-radius: 20px;
+      margin: auto;
+    }
+    .modal-title {
+      color: var(--svc-text);
+      font-family: 'Archivo', var(--font-stack);
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+    }
+    .modal-btn-row { display: flex; gap: 0.6rem; margin-top: 0.9rem; }
+    .modal-btn-row button {
+      cursor: pointer;
+    }
+    .modal-btn-cancel {
+      background: #2C2C2E !important;
+      border-color: transparent !important;
+      color: #ffffff !important;
+      flex: 1 !important;
+    }
+    .modal-btn-primary { flex: 2; }
+    /* Add Vehicle form fields */
+    .av-field-group { display: flex; flex-direction: column; gap: 4px; }
+    .av-field-label {
+      font-family: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: rgba(200,205,214,0.75);
+    }
+    .av-field-input {
+      width: 100%; box-sizing: border-box;
+      background: #010101; color: #eceef2;
+      border: 1px solid var(--svc-border); border-radius: 10px;
+      padding: 8px 10px; font-size: 16px;
+      font-family: var(--font-stack, sans-serif);
+      min-height: 44px;
+    }
+    .av-field-input:focus { outline: none; border-color: var(--svc-cobalt); box-shadow: 0 0 0 3px rgba(0,122,255,0.2); }
+    .av-field-input:disabled { opacity: 0.38; cursor: not-allowed; }
+    .av-field-input[type="date"] { color-scheme: dark; }
+    .av-field-select {
+      width: 100%;
+      box-sizing: border-box;
+      background-color: #010101;
+      color: #eceef2;
+      border: 1px solid var(--svc-border);
+      border-radius: 10px;
+      padding: 8px 2.25rem 8px 10px;
+      font-size: 16px;
+      font-family: var(--font-stack, sans-serif);
+      min-height: 44px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23a8b0bc' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+      background-size: 12px 8px;
+    }
+    .av-field-select:focus {
+      outline: none;
+      border-color: var(--svc-cobalt);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    }
+    .av-field-select option {
+      background: #121212;
+      color: #eceef2;
+    }
+
+    .user-manual-header {
+      padding: 1.25rem 1.25rem 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .user-manual-title {
+      margin: 0;
+      color: #ffffff;
+      font-family: 'Archivo', var(--font-stack);
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+    .user-manual-subtitle {
+      margin: 0.35rem 0 0;
+      color: var(--svc-text-soft);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1.4;
+    }
+    .user-manual-body {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    .user-manual-section {
+      padding: 1.05rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .user-manual-section:last-child {
+      border-bottom: none;
+    }
+    .user-manual-section-heading {
+      margin: 0 0 0.55rem;
+      color: #ffffff;
+      font-family: 'Archivo', var(--font-stack);
+      font-size: 0.84rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      line-height: 1.35;
+    }
+    .user-manual-section-copy {
+      margin: 0;
+      color: rgba(236, 238, 242, 0.82);
+      font-size: 0.82rem;
+      line-height: 1.65;
+      letter-spacing: 0.01em;
+    }
+    .user-manual-footer {
+      padding: 1rem 1.25rem 1.25rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: center;
+      background: #0f0f0f;
+    }
+    .user-manual-dismiss-btn {
+      width: 100%;
+      max-width: 18rem;
+      cursor: pointer;
+    }
+    .av-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .av-nonop-row {
+      display: flex; align-items: center; gap: 8px; cursor: pointer;
+      color: var(--svc-text); font-size: 0.78rem; padding: 2px 0;
+    }
+    .av-form-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .av-build-type-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      padding: 3px;
+      background: #0a0a0a;
+      border: 1px solid var(--svc-border);
+      border-radius: 12px;
+    }
+    .av-build-type-option {
+      min-height: 44px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--svc-text-soft);
+      font-family: var(--font-stack);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 160ms, color 160ms, box-shadow 160ms;
+    }
+    .av-build-type-option[aria-pressed="true"] {
+      background: var(--bp-cta-gradient, linear-gradient(180deg, #1f4468 0%, #1a3a5c 48%, #0d2840 100%));
+      color: #ffffff;
+      border: 1px solid var(--bp-cta-border, rgba(0, 122, 255, 0.32));
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+    .av-build-type-option:focus-visible {
+      outline: 2px solid var(--svc-cobalt-hi);
+      outline-offset: 2px;
+    }
+
+    main > header.flex {
+      padding-top: calc(1rem + var(--safe-top));
+    }
+    @media (max-width: 360px) {
+      .dashboard-toolbar-btn,
+      .templates-menu-btn {
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+      }
+    }
+
+    /* -- Obsidian Dark: force dark backgrounds on form elements -- */
+    .av-field-input {
+      background: #0a0a0a !important;
+      border-color: var(--svc-border) !important;
+    }
+    .av-field-input:focus {
+      border-color: var(--svc-cobalt) !important;
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2) !important;
+    }
+  </style>
+</head>
+<body class="p-0 bp-has-index-dock">
+  <main class="max-w-md mx-auto main-shell min-h-screen">
+
+    <header class="flex items-center justify-between px-4 py-3 bg-black border-b border-neutral-800 sticky top-0 z-50">
+      <div class="app-header-brand">
+        <img
+          src="logo.png"
+          alt=""
+          class="app-header-logo"
+          width="883"
+          height="475"
+          decoding="async"
+        />
+        <h1 class="app-header-title">BuildPilot</h1>
+      </div>
+      <div class="app-header-actions">
+        <button
+          type="button"
+          id="header-info-btn"
+          class="dashboard-info-btn dashboard-info-btn--header bubble-tactile"
+          aria-label="About BuildPilot"
+        >i</button>
+        <a
+          href="settings.html"
+          id="header-config-btn"
+          class="dashboard-config-btn bubble-tactile"
+          aria-label="Settings"
+          title="Settings"
+        >&#9881;</a>
+      </div>
+    </header>
+
+    <div class="main-shell-inner">
+      <!-- Project Dashboard -->
+      <div class="vehicle-dashboard-sections">
+        <section class="vehicle-dashboard-section vehicle-dashboard-section--my-builds" id="my-builds-section">
+          <div class="my-builds-actions">
+            <div class="my-builds-drawer-stack">
+              <div class="my-builds-actions__toolbar">
+                <button
+                  type="button"
+                  id="templates-toggle"
+                  class="dashboard-toolbar-btn project-stats-btn bp-btn-outline"
+                  aria-expanded="false"
+                  aria-controls="templates-panel"
+                >
+                  <span>Templates</span>
+                  <svg class="project-stats-chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 4.5 6 7.5 9 4.5" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  id="project-stats-toggle"
+                  class="dashboard-toolbar-btn project-stats-btn bp-btn-outline"
+                  aria-expanded="false"
+                  aria-controls="project-stats-panel"
+                >
+                  <span class="project-stats-btn__label">
+                    <span class="project-stats-btn__line">Project</span>
+                    <span class="project-stats-btn__line">Stats</span>
+                  </span>
+                  <svg class="project-stats-chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 4.5 6 7.5 9 4.5" />
+                  </svg>
+                </button>
+              </div>
+              <div id="templates-panel" class="project-stats-collapse" aria-label="Template options">
+                <div class="project-stats-collapse-inner">
+                  <div class="templates-menu">
+                    <button id="bulk-download-template-btn" type="button" class="templates-menu-btn bubble-tactile">Download Template</button>
+                    <button id="bulk-upload-data-btn" type="button" class="templates-menu-btn bubble-tactile">Upload Template</button>
+                    <div class="vault-actions">
+                      <p class="templates-backup-hint">Download a simple build file to your device to move your garage data to a new phone or share your timeline with a friend.</p>
+                      <button id="vault-export-btn" type="button" class="vault-export-btn bubble-tactile">Save Project Backup File</button>
+                      <button id="vault-import-btn" type="button" class="vault-import-btn bubble-tactile">Restore Project from File</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="project-stats-panel" class="project-stats-collapse">
+                <div class="project-stats-collapse-inner">
+                  <div class="widget project-stats-widget">
+                    <div class="flex flex-col gap-4">
+                      <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        <span class="dashboard-label uppercase tracking-[0.12em]">
+                          Purchase Price (All Vehicles)
+                        </span>
+                        <span class="text-lg font-bold tabular-nums tracking-tight" id="garage-purchase-price">$0.00</span>
+                      </div>
+                      <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        <span class="dashboard-label uppercase tracking-[0.12em]">
+                          Total Investment
+                        </span>
+                        <span class="vehicle-total-investment tabular-nums" id="garage-total-investment">$0.00</span>
+                      </div>
+                    </div>
+                    <div class="mt-4 text-xs dashboard-breakdown tabular-nums leading-relaxed tracking-wide" id="garage-investment-breakdown"></div>
+                  </div>
+                  <div id="bi-garage-insights-mount" class="project-stats-insights-mount" aria-label="Garage insights"></div>
+                </div>
+              </div>
+            </div>
+            <button id="add-vehicle-btn" class="add-vehicle-btn bp-btn-outline" type="button">Add Vehicle</button>
+          </div>
+          <div class="vehicle-dashboard-section-head">
+            <h2 class="dashboard-section-title">My Builds</h2>
+          </div>
+          <div class="list-box vehicle-list-panel">
+            <div class="list-stack" id="vehicle-cards-active"></div>
+          </div>
+        </section>
+
+        <section class="vehicle-dashboard-section" id="completed-builds-section">
+          <div class="vehicle-dashboard-section-head">
+            <h2 class="dashboard-section-title">Completed Projects</h2>
+          </div>
+          <div class="list-box vehicle-list-panel">
+            <div class="list-stack" id="vehicle-cards-completed"></div>
+          </div>
+        </section>
+
+        
+      </div>
+    </div><!-- /.main-shell-inner -->
+  </main>
+  <nav class="bp-index-thumb-dock" aria-label="Quick actions">
+    <div class="bp-index-thumb-dock__inner">
+      <button type="button" id="add-vehicle-thumb" class="bp-btn bp-btn-outline bp-bottom-nav-item bp-bottom-nav-item--primary" aria-label="Add Vehicle">+ Add Vehicle</button>
+    </div>
+  </nav>
+  <div id="modal-overlay" class="modal-overlay"></div>
+  <input id="bulk-upload-input" type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" />
+  <input id="vault-import-input" type="file" accept=".json,application/json" style="display:none;" />
+  <script src="buildpilot-logo-embed.js"></script>
+  <script src="js/buildpilot-storage.js"></script>
+  <script src="js/buildpilot-manifest-export.js"></script>
+  <script src="js/buildpilot-inventory.js"></script>
+  <script src="js/buildpilot-config-panel.js"></script>
+  <script src="js/buildpilot-intelligence.js"></script>
+  <script>
+    // --- Local Storage key
+    const LS_VEHICLES_KEY = 'buildpilot_vehicles';
+    const LEGACY_LS_VEHICLES_KEY = 'vehicles';
+    const LS_SELECTED_VEHICLE_ID_KEY = 'selectedVehicleId';
+
+    /** Project builds only ? customer shop vehicles use vehicleMode: 'customer'. */
+    function isProjectVehicle(v) {
+      if (!v) return false;
+      return !v.vehicleMode || v.vehicleMode === 'project';
+    }
+    function filterProjectVehicles(list) {
+      return (list || []).filter(isProjectVehicle);
+    }
+    const BUILDPILOT_VAULT_VERSION = 1;
+    const BUILDPILOT_APP_VERSION = "1.0.0";
+    const BUILDPILOT_VAULT_FILENAME = 'BuildPilot_Master_Backup.json';
+    const BUILDPILOT_VEHICLE_KEY_PATTERN = /^vehicle_(parts|tasks|labor|reg_expiry|system_state)_/;
+    const FORMSPREE_SUPPORT_ENDPOINT = "https://formspree.io/f/xeedozwb";
+
+    function isBuildPilotStorageKey(key) {
+      if (window.BuildPilotStorage && window.BuildPilotStorage.isBuildPilotUserDataKey) {
+        return window.BuildPilotStorage.isBuildPilotUserDataKey(key);
+      }
+      if (!key) return false;
+      if (key === LS_VEHICLES_KEY || key === LEGACY_LS_VEHICLES_KEY || key === LS_SELECTED_VEHICLE_ID_KEY) return true;
+      return BUILDPILOT_VEHICLE_KEY_PATTERN.test(key);
+    }
+
+    function collectBuildPilotVaultSnapshot() {
+      const entries = {};
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (!isBuildPilotStorageKey(key)) continue;
+        const raw = localStorage.getItem(key);
+        if (raw == null) continue;
+        try {
+          entries[key] = JSON.parse(raw);
+        } catch (_err) {
+          entries[key] = raw;
+        }
+      }
+      return {
+        buildPilotVaultVersion: BUILDPILOT_VAULT_VERSION,
+        app: 'BuildPilot',
+        exportedAt: new Date().toISOString(),
+        entries
+      };
+    }
+
+    function validateBuildPilotVaultPayload(data) {
+      if (!data || typeof data !== 'object') {
+        return { ok: false, error: 'Invalid backup file format.' };
+      }
+      const entries = data.entries || data.storage;
+      if (!entries || typeof entries !== 'object' || Array.isArray(entries)) {
+        return { ok: false, error: 'Backup is missing a valid storage entries object.' };
+      }
+      if (!Object.prototype.hasOwnProperty.call(entries, LS_VEHICLES_KEY)) {
+        return { ok: false, error: 'Backup is missing the vehicles collection.' };
+      }
+              const vehicles = entries[LS_VEHICLES_KEY];
+      if (!Array.isArray(vehicles)) {
+        return { ok: false, error: 'The vehicles entry must be an array.' };
+      }
+      for (const vehicle of vehicles) {
+        if (!vehicle || typeof vehicle !== 'object' || vehicle.id == null) {
+          return { ok: false, error: 'One or more vehicle records are invalid.' };
+        }
+        hydrateVehicleRecordCollections(vehicle);
+      }
+      for (const [key, value] of Object.entries(entries)) {
+        if (!isBuildPilotStorageKey(key)) continue;
+        if (key.startsWith('vehicle_parts_') || key.startsWith('vehicle_tasks_') || key.startsWith('vehicle_labor_')) {
+          if (value != null && !Array.isArray(value)) {
+            return { ok: false, error: `Invalid array data for ${key}.` };
+          }
+        }
+        if (key.startsWith('vehicle_system_state_') && value != null && (typeof value !== 'object' || Array.isArray(value))) {
+          return { ok: false, error: `Invalid system state object for ${key}.` };
+        }
+        if (key === LS_SELECTED_VEHICLE_ID_KEY && value != null && typeof value !== 'string' && typeof value !== 'number') {
+          return { ok: false, error: 'Selected vehicle id must be a string or number.' };
+        }
+        if (key.startsWith('vehicle_reg_expiry_') && value != null && typeof value !== 'string') {
+          return { ok: false, error: `Invalid registration expiry value for ${key}.` };
+        }
+      }
+      return { ok: true, entries };
+    }
+
+    function writeBuildPilotVaultEntry(key, value) {
+      if (value == null) {
+        localStorage.removeItem(key);
+        return;
+      }
+      if (typeof value === 'string') {
+        localStorage.setItem(key, value);
+        return;
+      }
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function importBuildPilotVaultEntries(entries) {
+      const existingKeys = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (isBuildPilotStorageKey(key)) existingKeys.push(key);
+      }
+      existingKeys.forEach((key) => localStorage.removeItem(key));
+      Object.entries(entries).forEach(([key, value]) => {
+        if (!isBuildPilotStorageKey(key)) return;
+        writeBuildPilotVaultEntry(key, value);
+      });
+    }
+
+    function closeTemplatesPanel() {
+      const templatesPanel = document.getElementById('templates-panel');
+      const templatesToggle = document.getElementById('templates-toggle');
+      if (templatesPanel) setFluidCollapsePanel(templatesPanel, false);
+      if (templatesToggle) templatesToggle.setAttribute('aria-expanded', 'false');
+    }
+
+    function exportBuildPilotVault() {
+      const payload = collectBuildPilotVaultSnapshot();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = BUILDPILOT_VAULT_FILENAME;
+      anchor.rel = 'noopener';
+      anchor.style.display = 'none';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 250);
+      closeTemplatesPanel();
+    }
+
+    function wireVaultActions() {
+      const exportBtn = document.getElementById('vault-export-btn');
+      const importBtn = document.getElementById('vault-import-btn');
+      const importInput = document.getElementById('vault-import-input');
+      if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+          try {
+            exportBuildPilotVault();
+          } catch (err) {
+            alert(err && err.message ? err.message : 'Could not save your project backup file.');
+          }
+        });
+      }
+      if (importBtn && importInput) {
+        importBtn.addEventListener('click', () => {
+          importInput.value = '';
+          importInput.click();
+          closeTemplatesPanel();
+        });
+        importInput.addEventListener('change', () => {
+          const file = importInput.files && importInput.files[0];
+          if (!file) return;
+          const lower = String(file.name || '').toLowerCase();
+          if (!lower.endsWith('.json')) {
+            alert('Please choose a BuildPilot project backup file.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const parsed = JSON.parse(String(reader.result || ''));
+              const validation = validateBuildPilotVaultPayload(parsed);
+              if (!validation.ok) throw new Error(validation.error);
+              const vehicleCount = Array.isArray(validation.entries[LS_VEHICLES_KEY])
+                ? validation.entries[LS_VEHICLES_KEY].length
+                : 0;
+              const confirmMsg = vehicleCount
+                ? `Restore from this project backup file? It will replace all current BuildPilot data for ${vehicleCount} vehicle${vehicleCount === 1 ? '' : 's'}.`
+                : 'Restore from this project backup file? It will replace all current BuildPilot data.';
+              if (!confirm(confirmMsg)) return;
+              importBuildPilotVaultEntries(validation.entries);
+              migrateLegacyKeysOntoVehicles();
+              renderVehicles();
+              alert('Project restored successfully.');
+            } catch (err) {
+              alert(err && err.message ? err.message : 'Could not restore project from file.');
+            }
+          };
+          reader.onerror = () => alert('Could not read the selected backup file.');
+          reader.readAsText(file);
+        });
+      }
+    }
+
+    const CSV_CHAPTER_VALUES = [
+      "Engine",
+      "Cooling System",
+      "Fuel System",
+      "Exhaust System",
+      "Drivetrain",
+      "Brakes",
+      "Suspension & Steering",
+      "Electrical & Ignition",
+      "Body & Exterior",
+      "Interior",
+      "Wheels & Tires"
+    ];
+    const PART_STATUS_VALUES = ["Needed", "Ordered", "Received", "Installed"];
+    const PART_STATUS_VALUES_LEGACY_EXPORT = ["Needed", "Ordered", "Received", "Installed"];
+    const TASK_STATUS_VALUES = ["Pending", "In Progress", "Complete"];
+    const LABOR_STATUS_VALUES = ["Pending", "In Progress", "Complete"];
+    const CSV_STATUS_VALUES = [...new Set([...PART_STATUS_VALUES, ...TASK_STATUS_VALUES, ...LABOR_STATUS_VALUES])];
+    /** Spreadsheet conditional-format palette ? soft Orange / Purple / Gold / Green */
+    const MANIFEST_CF_COLORS = {
+      orange: "FFFDE8D0",
+      orangeFg: "FF9A3412",
+      purple: "FFF3E8FF",
+      purpleFg: "FF6B21A8",
+      gold: "FFFEF9C3",
+      goldFg: "FF854D0E",
+      green: "FFDCFCE7",
+      greenFg: "FF166534"
+    };
+
+    function manifestStatusDropdownFormula() {
+      return `"${CSV_STATUS_VALUES.join(",")}"`;
+    }
+    /** Build Planner manifest: row 1 brand, rows 2?4 vehicle meta, row 6 headers, row 7+ line items. */
+    const MANIFEST_TEMPLATE_HEADER_ROW = (window.BuildPilotManifestExport && window.BuildPilotManifestExport.TEMPLATE.HEADER_ROW) || 7;
+    const MANIFEST_TEMPLATE_FIRST_ROW = (window.BuildPilotManifestExport && window.BuildPilotManifestExport.TEMPLATE.FIRST_ROW) || 8;
+    const MANIFEST_TEMPLATE_LAST_ROW = (window.BuildPilotManifestExport && window.BuildPilotManifestExport.TEMPLATE.LAST_ROW) || 102;
+    const MANIFEST_TEMPLATE_ITEM_ROWS = MANIFEST_TEMPLATE_LAST_ROW - MANIFEST_TEMPLATE_FIRST_ROW + 1;
+
+    function isSpreadsheetTemplateSheetName(sheetName) {
+      const s = String(sheetName || "").trim();
+      if (!s) return false;
+      return /^(add\s*new\s*vehicle|template|instructions?|readme|sheet\s*guide)$/i.test(s);
+    }
+
+    function isSpreadsheetTemplateHelperText(text) {
+      const s = String(text || "").trim();
+      if (!s) return false;
+      if (/^add\s*new\s*vehicle$/i.test(s)) return true;
+      if (/^\(new\s*vehicle\)$/i.test(s)) return true;
+      if (/^\(?\s*new\s*vehicle\s*\)?$/i.test(s)) return true;
+      if (/^vehicle\s*year,?\s*make\s*and\s*model:\s*\(new\s*vehicle\)$/i.test(s)) return true;
+      if (/^vehicle\s*year,?\s*make\s*and\s*model:\s*\(?\s*new\s*vehicle\s*\)?$/i.test(s)) return true;
+      if (/^build\s*manifest:\s*$/i.test(s)) return true;
+      if (/^example(\s+vehicle)?$/i.test(s)) return true;
+      if (/^template\b/i.test(s)) return true;
+      if (/^click\s+here\b/i.test(s)) return true;
+      if (/^instructions?:/i.test(s)) return true;
+      if (/^do\s+not\s+import/i.test(s)) return true;
+      if (/^your\s+vehicle/i.test(s)) return true;
+      if (/^enter\s+(vehicle|name)/i.test(s)) return true;
+      if (/^sample\b/i.test(s)) return true;
+      if (/^blank\b/i.test(s)) return true;
+      return false;
+    }
+
+    function isSpreadsheetTemplateVehicleName(name) {
+      const s = String(name || "").trim();
+      if (!s) return true;
+      if (isSpreadsheetTemplateHelperText(s)) return true;
+      if (/^\(?\s*new\s*vehicle\s*\)?$/i.test(s)) return true;
+      if (/new\s*vehicle/i.test(s) && s.replace(/[^a-z0-9]/gi, "").length <= 12) return true;
+      return false;
+    }
+
+    /** Explicit phantom-vehicle / template-instruction row guard for import loops. */
+    function shouldSkipSpreadsheetImportRow(...cellValues) {
+      return cellValues.some(value => {
+        const s = String(value == null ? "" : value).trim();
+        if (!s) return false;
+        if (s === "(New Vehicle)" || s === "(new vehicle)") return true;
+        if (/^add\s+new\s+vehicle$/i.test(s)) return true;
+        return isSpreadsheetTemplateVehicleName(s) || isSpreadsheetTemplateHelperText(s);
+      });
+    }
+
+    function extractManifestProjectNameFromTitleLine(titleLine) {
+      const line = String(titleLine || "").trim();
+      if (!line || isSpreadsheetTemplateHelperText(line)) return "";
+      const buildMatch = line.match(/^BUILD MANIFEST:\s*(.+)$/i);
+      if (buildMatch) {
+        const name = buildMatch[1].trim();
+        return isSpreadsheetTemplateVehicleName(name) ? "" : name;
+      }
+      const ymmMatch = line.match(/^Vehicle\s*Year,?\s*Make\s*and\s*Model:\s*(.+)$/i);
+      if (ymmMatch) {
+        const name = ymmMatch[1].trim();
+        return isSpreadsheetTemplateVehicleName(name) ? "" : name;
+      }
+      return "";
+    }
+
+    function shouldRejectSpreadsheetImportPayload(payload, sheetName) {
+      if (!payload) return true;
+      if (isSpreadsheetTemplateSheetName(sheetName)) return true;
+      const projectName = String(payload.project && payload.project.Project_Name || "").trim();
+      if (isSpreadsheetTemplateVehicleName(projectName)) return true;
+      const hasItems = Array.isArray(payload.items) && payload.items.some(item => String(item && item.name || "").trim());
+      if (!hasItems && isSpreadsheetTemplateVehicleName(projectName)) return true;
+      return false;
+    }
+
+    const VALIDATION_LISTS_SHEET = "ValidationLists";
+    const MANIFEST_STATUS_UNIVERSAL_LIST = `"${CSV_STATUS_VALUES.join(",")}"`;
+
+    function validationListsColumnLetter(index) {
+      return String.fromCharCode(64 + index);
+    }
+
+    function validationListsRowRange(rowNumber, itemCount) {
+      const endCol = validationListsColumnLetter(itemCount);
+      return `'${VALIDATION_LISTS_SHEET}'!$A$${rowNumber}:$${endCol}$${rowNumber}`;
+    }
+
+    function ensureValidationListsSheet(workbook) {
+      if (workbook.__validationListsReady) return;
+      let sheet = workbook.getWorksheet(VALIDATION_LISTS_SHEET);
+      if (!sheet) {
+        sheet = workbook.addWorksheet(VALIDATION_LISTS_SHEET);
+        if ("state" in sheet) sheet.state = "veryHidden";
+        PART_STATUS_VALUES.forEach((val, idx) => { sheet.getCell(1, idx + 1).value = val; });
+        TASK_STATUS_VALUES.forEach((val, idx) => { sheet.getCell(2, idx + 1).value = val; });
+        LABOR_STATUS_VALUES.forEach((val, idx) => { sheet.getCell(3, idx + 1).value = val; });
+      }
+      workbook.__validationListsReady = true;
+    }
+
+    function validationListRangeForType(typeVal) {
+      const t = String(typeVal || "").trim();
+      if (t === "Part") return validationListsRowRange(1, PART_STATUS_VALUES.length);
+      if (t === "Task") return validationListsRowRange(2, TASK_STATUS_VALUES.length);
+      if (t === "Outside Labor") return validationListsRowRange(3, LABOR_STATUS_VALUES.length);
+      return null;
+    }
+
+    function manifestStatusListValidationFormula(rowNumber) {
+      const partRange = validationListsRowRange(1, PART_STATUS_VALUES.length);
+      const taskRange = validationListsRowRange(2, TASK_STATUS_VALUES.length);
+      const laborRange = validationListsRowRange(3, LABOR_STATUS_VALUES.length);
+      return `IF($B${rowNumber}="Part",${partRange},IF($B${rowNumber}="Task",${taskRange},IF($B${rowNumber}="Outside Labor",${laborRange},${MANIFEST_STATUS_UNIVERSAL_LIST})))`;
+    }
+
+    function manifestStatusCustomValidationFormula(rowNumber) {
+      const s = VALIDATION_LISTS_SHEET;
+      const r = rowNumber;
+      return `OR($G${r}="",AND($B${r}="Part",COUNTIF('${s}'!$A$1:$D$1,$G${r})>0),AND($B${r}="Task",COUNTIF('${s}'!$A$2:$C$2,$G${r})>0),AND($B${r}="Outside Labor",COUNTIF('${s}'!$A$3:$C$3,$G${r})>0),AND($B${r}="",OR(COUNTIF('${s}'!$A$1:$D$1,$G${r})>0,COUNTIF('${s}'!$A$2:$C$2,$G${r})>0,COUNTIF('${s}'!$A$3:$C$3,$G${r})>0)))`;
+    }
+
+    function applyManifestStatusCellValidation(excelRow) {
+      excelRow.getCell("G").dataValidation = {
+        type: "list",
+        allowBlank: true,
+        showInputMessage: true,
+        promptTitle: "Status options",
+        prompt: "Part: Needed, Ordered, Received, Installed. Task/Labor: Pending, In Progress, Complete.",
+        showErrorMessage: true,
+        errorTitle: "Invalid Status for Type",
+        error: "Status must match Type. Part ? Needed/Ordered/Received/Installed. Task or Outside Labor ? Pending/In Progress/Complete.",
+        formulae: [`=${manifestStatusListValidationFormula(excelRow.number)}`]
+      };
+    }
+
+    function applyManifestStatusFallbackValidation(excelRow) {
+      excelRow.getCell("G").dataValidation = {
+        type: "custom",
+        allowBlank: true,
+        showInputMessage: true,
+        promptTitle: "Status options",
+        prompt: `Allowed: ${CSV_STATUS_VALUES.join(", ")}. Status must match row Type when Type is set.`,
+        showErrorMessage: true,
+        errorTitle: "Status does not match Type",
+        error: "Part ? Needed/Ordered/Received/Installed. Task or Outside Labor ? Pending/In Progress/Complete.",
+        formulae: [`=${manifestStatusCustomValidationFormula(excelRow.number)}`]
+      };
+    }
+
+    function applyManifestStatusLogicalValidation(excelRow) {
+      excelRow.getCell("G").dataValidation = {
+        type: "custom",
+        allowBlank: true,
+        showErrorMessage: true,
+        errorTitle: "Status does not match Type",
+        error: "Part ? Needed/Ordered/Received/Installed. Task or Outside Labor ? Pending/In Progress/Complete.",
+        formulae: [`=${manifestStatusCustomValidationFormula(excelRow.number)}`]
+      };
+    }
+
+    function manifestStatusListForType(typeVal) {
+      const t = String(typeVal || "").trim();
+      if (t === "Task" || t === "Outside Labor") return TASK_STATUS_VALUES.slice();
+      return PART_STATUS_VALUES.slice();
+    }
+
+    const BUILDPILOT_LOGO_FILENAME = "logo.png";
+    let buildPilotLogoDataUrlCache = null;
+
+    function resolveBuildPilotLogoUrl() {
+      try {
+        return new URL(BUILDPILOT_LOGO_FILENAME, window.location.href).href;
+      } catch (_err) {
+        return BUILDPILOT_LOGO_FILENAME;
+      }
+    }
+
+    function readBlobAsDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function loadBuildPilotLogoViaImageElement(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.decoding = "async";
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              reject(new Error("Canvas unavailable"));
+              return;
+            }
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = () => reject(new Error("Logo image failed to load"));
+        img.src = src;
+      });
+    }
+
+    async function loadBuildPilotLogoDataUrl() {
+      if (buildPilotLogoDataUrlCache) return buildPilotLogoDataUrlCache;
+      if (typeof window.BUILDPILOT_LOGO_DATA_URL === "string" && window.BUILDPILOT_LOGO_DATA_URL.startsWith("data:image/")) {
+        buildPilotLogoDataUrlCache = window.BUILDPILOT_LOGO_DATA_URL;
+        return buildPilotLogoDataUrlCache;
+      }
+      const logoUrl = resolveBuildPilotLogoUrl();
+      try {
+        const res = await fetch(logoUrl, { cache: "force-cache" });
+        if (res.ok) {
+          buildPilotLogoDataUrlCache = await readBlobAsDataUrl(await res.blob());
+          return buildPilotLogoDataUrlCache;
+        }
+      } catch (_fetchErr) { /* file:// fallback below */ }
+      try {
+        buildPilotLogoDataUrlCache = await loadBuildPilotLogoViaImageElement(logoUrl);
+        return buildPilotLogoDataUrlCache;
+      } catch (_imgErr) {
+        return "";
+      }
+    }
+
+    async function loadBuildPilotLogoBase64() {
+      const dataUrl = await loadBuildPilotLogoDataUrl();
+      if (!dataUrl) return "";
+      const match = dataUrl.match(/^data:image\/\w+;base64,(.+)$/);
+      return match ? match[1] : dataUrl.replace(/^data:image\/\w+;base64,/, "");
+    }
+
+    function applyManifestBrandHeaderRow(worksheet, workbook, logoBase64) {
+      const M = window.BuildPilotManifestExport;
+      if (M && M.applyManifestBrandHeaderRow) {
+        M.applyManifestBrandHeaderRow(worksheet, workbook, logoBase64);
+      }
+    }
+
+    function manifestStatusConditionalFormattingRules(cfFill) {
+      const c = MANIFEST_CF_COLORS;
+      const tone = (bg, fg) => ({ fill: cfFill(bg), font: { color: { argb: fg } } });
+      return [
+        { type: "containsText", operator: "containsText", text: "Installed", priority: 1, style: tone(c.green, c.greenFg) },
+        { type: "containsText", operator: "containsText", text: "Complete", priority: 2, style: tone(c.green, c.greenFg) },
+        { type: "containsText", operator: "containsText", text: "Received", priority: 3, style: tone(c.gold, c.goldFg) },
+        { type: "containsText", operator: "containsText", text: "Pending", priority: 4, style: tone(c.orange, c.orangeFg) },
+        { type: "containsText", operator: "containsText", text: "In Progress", priority: 5, style: tone(c.purple, c.purpleFg) },
+        { type: "containsText", operator: "containsText", text: "Ordered", priority: 6, style: tone(c.purple, c.purpleFg) },
+        { type: "containsText", operator: "containsText", text: "Needed", priority: 7, style: tone(c.orange, c.orangeFg) }
+      ];
+    }
+
+    const MANIFEST_SHEET_COLUMN_COUNT = 9;
+    const MANIFEST_WRAP_TEXT_COLUMNS = [6, 8];
+
+    function excelCellTextLength(value) {
+      if (value == null) return 0;
+      if (value instanceof Date) return value.toLocaleDateString().length;
+      if (typeof value === "object") {
+        if (Object.prototype.hasOwnProperty.call(value, "text")) return String(value.text).length;
+        if (Object.prototype.hasOwnProperty.call(value, "hyperlink")) {
+          return String(value.hyperlink || value.text || "").length;
+        }
+        if (Object.prototype.hasOwnProperty.call(value, "result")) return String(value.result).length;
+      }
+      return String(value).length;
+    }
+
+    function autoBalanceManifestWorksheetColumns(worksheet, maxColumns = MANIFEST_SHEET_COLUMN_COUNT) {
+      for (let colNum = 1; colNum <= maxColumns; colNum += 1) {
+        const column = worksheet.getColumn(colNum);
+        let maxLen = 0;
+        column.eachCell({ includeEmpty: false }, (cell) => {
+          maxLen = Math.max(maxLen, excelCellTextLength(cell.value));
+        });
+        column.width = Math.max(maxLen + 4, 12);
+      }
+    }
+
+    function applyManifestWrapTextColumns(worksheet, firstRow, lastRow) {
+      const wrapAlign = { wrapText: true, vertical: "middle" };
+      for (let r = firstRow; r <= lastRow; r += 1) {
+        MANIFEST_WRAP_TEXT_COLUMNS.forEach((colNum) => {
+          const cell = worksheet.getRow(r).getCell(colNum);
+          cell.alignment = { ...(cell.alignment || {}), ...wrapAlign };
+        });
+      }
+    }
+
+    function parseCost(cost) {
+      if (cost == null || cost === "") return 0;
+      if (typeof cost === "number") return Number.isFinite(cost) ? cost : 0;
+      if (typeof cost !== "string") return 0;
+      const clean = cost.replace(/[^0-9.\-]/g, "");
+      if (!clean) return 0;
+      const number = parseFloat(clean);
+      return Number.isFinite(number) ? number : 0;
+    }
+
+    function sanitizeImportArray(value) {
+      return Array.isArray(value) ? value : [];
+    }
+
+    function sanitizeImportText(value) {
+      if (value == null) return "";
+      return String(value).trim();
+    }
+
+    function sanitizeImportNumber(value, fallback = 0) {
+      const num = parseCost(value);
+      return Number.isFinite(num) ? num : fallback;
+    }
+
+    function sanitizeImportedPartRecord(part, vehicleId) {
+      if (!part || typeof part !== "object") return null;
+      try {
+        const base = {
+          ...part,
+          name: sanitizeImportText(part.name) || "Part",
+          category: sanitizeImportText(part.category),
+          cost: sanitizeImportNumber(part.cost, 0),
+          partUrl: sanitizeImportText(part.partUrl),
+          trackingNumber: sanitizeImportText(part.trackingNumber)
+        };
+        if (window.BuildPilotInventory) {
+          return window.BuildPilotInventory.normalizePart(base, vehicleId);
+        }
+        return { ...base, status: sanitizeImportText(part.status) || "Needed" };
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function sanitizeImportedTaskRecord(task) {
+      if (!task || typeof task !== "object") return null;
+      try {
+        const hrs = sanitizeImportNumber(task.estHours, 0);
+        return {
+          ...task,
+          name: sanitizeImportText(task.name) || "Task",
+          description: sanitizeImportText(task.description),
+          category: sanitizeImportText(task.category),
+          laborCost: sanitizeImportNumber(task.laborCost, 0),
+          estHours: hrs > 0 ? hrs : "",
+          status: sanitizeImportText(task.status) || "Pending"
+        };
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function sanitizeImportedLaborRecord(entry) {
+      if (!entry || typeof entry !== "object") return null;
+      try {
+        return {
+          ...entry,
+          shop: sanitizeImportText(entry.shop) || sanitizeImportText(entry.name) || "Outside Labor",
+          description: sanitizeImportText(entry.description),
+          category: sanitizeImportText(entry.category),
+          cost: sanitizeImportNumber(entry.cost, 0),
+          estHours: sanitizeImportNumber(entry.estHours ?? entry.hours ?? entry.costHours, 0),
+          status: sanitizeImportText(entry.status) || "Pending"
+        };
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function hydrateVehicleRecordCollections(vehicle) {
+      if (!vehicle || typeof vehicle !== "object") return vehicle;
+      try {
+        vehicle.parts = sanitizeImportArray(vehicle.parts);
+        vehicle.tasks = sanitizeImportArray(vehicle.tasks);
+        vehicle.labor = sanitizeImportArray(vehicle.labor);
+        vehicle.vehiclePurchasePrice = sanitizeImportNumber(vehicle.vehiclePurchasePrice, 0);
+        vehicle.totalLaborCost = sanitizeImportNumber(vehicle.totalLaborCost, 0);
+        vehicle.parts = vehicle.parts.map((p) => sanitizeImportedPartRecord(p, vehicle.id)).filter(Boolean);
+        if (window.BuildPilotInventory) window.BuildPilotInventory.ensureVehicleInventory(vehicle);
+        vehicle.tasks = vehicle.tasks.map(sanitizeImportedTaskRecord).filter(Boolean);
+        vehicle.labor = vehicle.labor.map(sanitizeImportedLaborRecord).filter(Boolean);
+      } catch (_err) {
+        vehicle.parts = sanitizeImportArray(vehicle.parts);
+        vehicle.tasks = sanitizeImportArray(vehicle.tasks);
+        vehicle.labor = sanitizeImportArray(vehicle.labor);
+      }
+      return vehicle;
+    }
+
+    function sanitizeImportedLineItem(item) {
+      if (!item || typeof item !== "object") return null;
+      try {
+        const type = normalizeCsvType(item.type);
+        const name = sanitizeImportText(item.name);
+        if (!type || !name) return null;
+        return {
+          chapter: normalizeSystemCategory(sanitizeImportText(item.chapter)),
+          type,
+          name,
+          vendor: sanitizeImportText(item.vendor),
+          description: sanitizeImportText(item.description),
+          partPrice: sanitizeImportNumber(item.partPrice, 0),
+          laborCost: sanitizeImportNumber(item.laborCost, 0),
+          costHours: sanitizeImportNumber(item.costHours, 0),
+          status: normalizeCsvStatus(sanitizeImportText(item.status), type),
+          partUrl: sanitizeImportText(item.partUrl),
+          trackingNumber: sanitizeImportText(item.trackingNumber)
+        };
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function sanitizeImportPayload(rawPayload) {
+      if (!rawPayload || typeof rawPayload !== "object") return null;
+      try {
+        const project = rawPayload.project && typeof rawPayload.project === "object" ? rawPayload.project : {};
+        const purchaseRaw = project.Purchase_Price;
+        const sanitizedProject = {
+          Project_Name: sanitizeImportText(project.Project_Name),
+          Purchase_Price: purchaseRaw == null || sanitizeImportText(purchaseRaw) === ""
+            ? null
+            : sanitizeImportNumber(purchaseRaw, 0),
+          Reg_Expiry: sanitizeImportText(project.Reg_Expiry),
+          Reg_NonOp: !!project.Reg_NonOp
+        };
+        const items = [];
+        sanitizeImportArray(rawPayload.items).forEach((item) => {
+          const cleanItem = sanitizeImportedLineItem(item);
+          if (cleanItem) items.push(cleanItem);
+        });
+        return { project: sanitizedProject, items };
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    function getStorageArray(key) {
+      try {
+        const arr = JSON.parse(localStorage.getItem(key) || "[]");
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function setStorageArray(key, arr) {
+      localStorage.setItem(key, JSON.stringify(arr));
+    }
+
+    function getRegExpiryStorageKey(vehicleId) {
+      return `vehicle_reg_expiry_${vehicleId}`;
+    }
+
+    function normalizeSystemCategory(value) {
+      const raw = String(value || "").trim().toLowerCase();
+      if (!raw) return "Engine";
+      if (raw === "cooling system" || raw === "cooling") return "Cooling System";
+      if (raw === "fuel system" || raw === "fuel") return "Fuel System";
+      if (raw === "exhaust system" || raw === "exhaust") return "Exhaust System";
+      if (raw === "electrical & ignition" || raw === "electrical" || raw === "ignition") return "Electrical & Ignition";
+      if (raw === "body" || raw === "body & exterior") return "Body & Exterior";
+      return CSV_CHAPTER_VALUES.find(c => c.toLowerCase() === raw) || "Engine";
+    }
+
+    function normalizeCsvType(value) {
+      const raw = String(value || "").trim().toLowerCase();
+      if (raw === "part" || raw === "parts") return "Part";
+      if (raw === "task" || raw === "tasks") return "Task";
+      if (raw === "outside labor" || raw === "labor") return "Outside Labor";
+      return "";
+    }
+
+    function normalizeCsvStatus(value, itemType) {
+      const raw = String(value || "").trim().toLowerCase();
+      const type = itemType ? normalizeCsvType(itemType) : "";
+      if (type === "Task" || type === "Outside Labor") {
+        if (raw === "complete" || raw === "completed" || raw === "installed") return "Complete";
+        if (raw === "in progress") return "In Progress";
+        return "Pending";
+      }
+      if (window.BuildPilotInventory) {
+        return window.BuildPilotInventory.normalizePartStatus(value);
+      }
+      if (raw === "needed" || raw === "pending" || raw === "planned" || raw === "removed" || raw === "researching" || raw === "archived") return "Needed";
+      if (raw === "ordered" || raw === "in progress" || raw === "shipped" || raw === "backordered") return "Ordered";
+      if (raw === "received" || raw === "delivered") return "Received";
+      if (raw === "installed" || raw === "complete" || raw === "completed") return "Installed";
+      const partMatch = PART_STATUS_VALUES.find(s => s.toLowerCase() === raw);
+      return partMatch || "Needed";
+    }
+
+    function templateHeaders() {
+      return [
+        "Project_Name","Purchase_Price","Reg_Expiry","Reg_NonOp","Chapter","Type","Name","Description",
+        "Part_Price","Labor_Cost","Cost_Hours","Status","Part_URL","Tracking_Number"
+      ];
+    }
+
+    function manifestLineItemHeaders() {
+      return ["Chapter", "Type", "Item Name", "Shop / Vendor", "Hours", "Cost", "Status", "URL", "Tracking"];
+    }
+
+    function formatUsdExcel(n) {
+      const num = Number(n);
+      if (!Number.isFinite(num)) return "$0.00";
+      return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    function getRegistrationManifestLineForGarage(vehicle) {
+      if (!vehicle) return "Registration Status: Not set | Expiry: ?";
+      if (vehicle.regNonOp) return "Registration Status: Non-Op | Expiry: ?";
+      const raw = localStorage.getItem(getRegExpiryStorageKey(vehicle.id));
+      if (!raw) return "Registration Status: Not set | Expiry: ?";
+      const expiry = new Date(raw);
+      if (isNaN(expiry.getTime())) return "Registration Status: Not set | Expiry: ?";
+      const display = expiry.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      expiry.setHours(0, 0, 0, 0);
+      const deltaDays = Math.round((expiry - now) / (86400000));
+      let statusLabel = "Current";
+      if (deltaDays < 0) statusLabel = "Expired";
+      else if (deltaDays <= 31) statusLabel = `Due in ${deltaDays} days`;
+      return `Registration Status: ${statusLabel} | Expiry: ${display}`;
+    }
+
+    function computeVehicleTotalInvestmentGarage(vehicle, parts, labor) {
+      const purchase = Number(vehicle.vehiclePurchasePrice) || 0;
+      let partsTotal = 0;
+      parts.forEach(p => {
+        if (String(p.status || "").toLowerCase() === "needed") return;
+        partsTotal += parseCost(p.cost);
+      });
+      let laborTotal = 0;
+      labor.forEach(l => {
+        if (l && (l.complete === true || l.completed === true)) laborTotal += parseCost(l.cost);
+      });
+      return purchase + partsTotal + laborTotal;
+    }
+
+    function formatManifestCostPriceExport(type, partPrice, laborCost, costHours) {
+      const pp = parseCost(partPrice);
+      const lc = parseCost(laborCost);
+      const hrs = parseCost(costHours);
+      if (type === "Part") return formatUsdExcel(pp);
+      if (type === "Task") {
+        const bits = [];
+        if (Number.isFinite(lc) && lc !== 0) bits.push(formatUsdExcel(lc));
+        if (Number.isFinite(hrs) && hrs !== 0) bits.push(`${hrs} hrs`);
+        return bits.join(" ? ");
+      }
+      if (type === "Outside Labor") return formatUsdExcel(lc);
+      return "";
+    }
+
+    function manifestLineItemRow(fields) {
+      return [
+        fields.chapter || "",
+        fields.type || "",
+        fields.name || "",
+        fields.vendor || "",
+        fields.hours || "",
+        fields.cost || "",
+        fields.status || "",
+        fields.url || "",
+        fields.tracking || ""
+      ];
+    }
+
+    function applyManifestMetaRowsToSheet(sheet, vehicle, parts, tasks, labor, totalInv, purchase) {
+      const M = window.BuildPilotManifestExport;
+      const meta = M
+        ? M.buildVehicleManifestMetaLines(vehicle, {
+          parts,
+          tasks,
+          labor,
+          totalInv,
+          purchase,
+          formatUsd: formatUsdExcel,
+          getRegistrationLine: getRegistrationManifestLineForGarage
+        })
+        : null;
+      sheet.mergeCells("A2:I2");
+      sheet.getCell("A2").value = meta ? meta.line2 : `Vehicle: ${vehicle.name || "Vehicle"}`;
+      sheet.mergeCells("A3:I3");
+      sheet.getCell("A3").value = meta ? meta.line3 : "";
+      sheet.mergeCells("A4:I4");
+      sheet.getCell("A4").value = meta ? meta.line4 : "";
+      sheet.mergeCells("A5:I5");
+      sheet.getCell("A5").value = meta ? meta.line5 : getRegistrationManifestLineForGarage(vehicle);
+      [2, 3, 4, 5].forEach((rowNum) => {
+        const cell = sheet.getCell(`A${rowNum}`);
+        cell.font = { name: "Calibri", size: rowNum === 2 ? 14 : 10, bold: rowNum === 2 };
+        cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      });
+    }
+
+    function styleTemplateWorksheet(worksheet, lineItemRowCount) {
+      const dataRows = Math.max(0, Number(lineItemRowCount) || 0);
+      const styledRows = Math.max(MANIFEST_TEMPLATE_ITEM_ROWS, dataRows);
+      const firstRow = MANIFEST_TEMPLATE_FIRST_ROW;
+      const lastRow = MANIFEST_TEMPLATE_FIRST_ROW + styledRows - 1;
+      const headerRowNum = MANIFEST_TEMPLATE_HEADER_ROW;
+      worksheet.views = [{
+        state: "frozen",
+        xSplit: 0,
+        ySplit: headerRowNum,
+        topLeftCell: `A${MANIFEST_TEMPLATE_FIRST_ROW}`
+      }];
+      const M = window.BuildPilotManifestExport;
+      if (M && M.applyProfessionalTemplateHeaderStyle) {
+        M.applyProfessionalTemplateHeaderStyle(worksheet, headerRowNum);
+      } else {
+        const headerRow = worksheet.getRow(headerRowNum);
+        headerRow.height = 24;
+        headerRow.eachCell({ includeEmpty: true }, (cell, colNum) => {
+          if (colNum < 1 || colNum > 9) return;
+          cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 10 };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D0D11" } };
+          cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+        });
+      }
+      worksheet.autoFilter = { from: `A${headerRowNum}`, to: `I${headerRowNum}` };
+
+      const cfFill = M && M.applyProfessionalTemplateGridStyle
+        ? M.applyProfessionalTemplateGridStyle(worksheet, firstRow, lastRow)
+        : (argb) => ({ type: "pattern", pattern: "solid", fgColor: { argb } });
+
+      if (!M || !M.applyProfessionalTemplateGridStyle) {
+        const thinEdge = { style: "thin", color: { argb: "FFD4D4D8" } };
+        const gridBorder = { top: thinEdge, left: thinEdge, bottom: thinEdge, right: thinEdge };
+        const dropdownFill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF4F4F5" } };
+        for (let r = firstRow; r <= lastRow; r++) {
+          const row = worksheet.getRow(r);
+          for (let c = 1; c <= 9; c++) {
+            const cell = row.getCell(c);
+            cell.border = gridBorder;
+            if (c === 6) cell.numFmt = "$#,##0.00";
+            if (c === 2 || c === 7) cell.fill = dropdownFill;
+          }
+        }
+      }
+
+      applyManifestWrapTextColumns(worksheet, firstRow, lastRow);
+
+      worksheet.addConditionalFormatting({
+        ref: `G${firstRow}:G${lastRow}`,
+        rules: manifestStatusConditionalFormattingRules(cfFill)
+      });
+
+      autoBalanceManifestWorksheetColumns(worksheet);
+    }
+
+    function applyManifestRowValidation(excelRow) {
+      const chapterFormula = `"${CSV_CHAPTER_VALUES.join(",")}"`;
+      excelRow.getCell("A").dataValidation = {
+        type: "list", allowBlank: true, formulae: [chapterFormula]
+      };
+      excelRow.getCell("B").dataValidation = {
+        type: "list", allowBlank: true, formulae: ['"Part,Task,Outside Labor"']
+      };
+      applyManifestStatusCellValidation(excelRow);
+    }
+
+    function applyManifestTemplateRowValidations(worksheet) {
+      for (let r = MANIFEST_TEMPLATE_FIRST_ROW; r <= MANIFEST_TEMPLATE_LAST_ROW; r += 1) {
+        applyManifestRowValidation(worksheet.getRow(r));
+      }
+    }
+
+    function safeSheetName(raw, usedNames) {
+      let name = String(raw || "Vehicle").replace(/[\\/?*:[\]]/g, " ").trim();
+      if (!name) name = "Vehicle";
+      name = name.slice(0, 31);
+      let candidate = name;
+      let n = 2;
+      while (usedNames.has(candidate)) {
+        const suffix = ` ${n}`;
+        candidate = `${name.slice(0, Math.max(1, 31 - suffix.length))}${suffix}`;
+        n += 1;
+      }
+      usedNames.add(candidate);
+      return candidate;
+    }
+
+    function extractExcelJsCellValue(cell) {
+      if (!cell) return "";
+      const value = cell.value;
+      if (value == null) return "";
+      if (value instanceof Date) return value;
+      if (typeof value === "object") {
+        if (Object.prototype.hasOwnProperty.call(value, "result")) return value.result;
+        if (Object.prototype.hasOwnProperty.call(value, "text")) return value.text;
+        if (Object.prototype.hasOwnProperty.call(value, "hyperlink")) return value.hyperlink;
+      }
+      return value;
+    }
+
+    function normalizeBuildType(vehicleOrRaw) {
+      if (window.BuildPilotStorage && window.BuildPilotStorage.normalizeBuildType) {
+        return window.BuildPilotStorage.normalizeBuildType(vehicleOrRaw);
+      }
+      const raw = typeof vehicleOrRaw === "object"
+        ? String(vehicleOrRaw && vehicleOrRaw.buildType || "standard")
+        : String(vehicleOrRaw || "standard");
+      return raw.toLowerCase() === "custom" ? "custom" : "standard";
+    }
+
+    function normalizeVehicleStatus(vehicleOrRaw) {
+      const raw = typeof vehicleOrRaw === "object"
+        ? String(vehicleOrRaw && vehicleOrRaw.status || "active")
+        : String(vehicleOrRaw || "active");
+      const lower = raw.toLowerCase();
+      if (lower === "sold") return "completed";
+      if (lower === "completed") return "completed";
+      return "active";
+    }
+
+    function ensureVehicleBuildSchema(vehicle) {
+      if (!vehicle) return vehicle;
+      if (window.BuildPilotStorage && window.BuildPilotStorage.ensureVehicleBuildSchema) {
+        return window.BuildPilotStorage.ensureVehicleBuildSchema(vehicle);
+      }
+      vehicle.buildType = normalizeBuildType(vehicle);
+      if (!Array.isArray(vehicle.customSegments)) vehicle.customSegments = [];
+      vehicle.customSegments = vehicle.customSegments
+        .filter(seg => seg && String(seg.name || "").trim())
+        .map(seg => ({
+          id: String(seg.id || `seg${Date.now()}${Math.floor(Math.random() * 1000)}`),
+          name: String(seg.name).trim()
+        }));
+      return vehicle;
+    }
+
+    function ensureVehicleProjectSchema(vehicle) {
+      if (!vehicle) return vehicle;
+      if (vehicle.vehicleMode === 'customer') return vehicle;
+      if (!vehicle.vehicleMode) vehicle.vehicleMode = 'project';
+      ensureVehicleBuildSchema(vehicle);
+      hydrateVehicleRecordCollections(vehicle);
+      if (String(vehicle.status || "").toLowerCase() === "sold") {
+        vehicle.status = "completed";
+      }
+      vehicle.status = normalizeVehicleStatus(vehicle);
+      delete vehicle.salePrice;
+      return vehicle;
+    }
+
+    function loadVehicles() {
+      let vehicles = [];
+      if (window.BuildPilotStorage && window.BuildPilotStorage.readVehiclesArrayFromLocalStorage) {
+        vehicles = window.BuildPilotStorage.readVehiclesArrayFromLocalStorage();
+      } else {
+        let data = localStorage.getItem(LS_VEHICLES_KEY);
+        if (!data) {
+          data = localStorage.getItem(LEGACY_LS_VEHICLES_KEY);
+          if (data) localStorage.setItem(LS_VEHICLES_KEY, data);
+        }
+        if (data) {
+          try {
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) vehicles = parsed;
+          } catch (_parseErr) { /* empty garage */ }
+        }
+      }
+      let changed = false;
+      for (let i = 0; i < vehicles.length; i += 1) {
+        const v = vehicles[i];
+        if (!v || typeof v !== "object") continue;
+        const before = JSON.stringify({ bt: v.buildType, cs: v.customSegments, st: v.status });
+        ensureVehicleProjectSchema(v);
+        if (JSON.stringify({ bt: v.buildType, cs: v.customSegments, st: v.status }) !== before) changed = true;
+        if (typeof v.vehiclePurchasePrice !== "number") { v.vehiclePurchasePrice = 0; changed = true; }
+        if (typeof v.totalLaborCost !== "number") { v.totalLaborCost = 0; changed = true; }
+      }
+      if (changed) saveVehicles(vehicles);
+      return vehicles;
+    }
+
+    function saveVehicles(vehicles) {
+      const payload = JSON.stringify(vehicles);
+      localStorage.setItem(LS_VEHICLES_KEY, payload);
+      localStorage.setItem(LEGACY_LS_VEHICLES_KEY, payload);
+    }
+
+    function getVehicleTasks(vehId) {
+      const vehicles = loadVehicles();
+      const v = vehicles.find(x => String(x.id) === String(vehId));
+      if (v && Array.isArray(v.tasks)) return v.tasks;
+      return getStorageArray(`vehicle_tasks_${vehId}`);
+    }
+
+    /** Sum estHours for tasks marked completed (this vehicle only). */
+    function sumCompletedTaskHoursForVehicle(vehId) {
+      const tasksArr = getVehicleTasks(vehId);
+      let sum = 0;
+      if (!Array.isArray(tasksArr)) return sum;
+      for (const t of tasksArr) {
+        if (t && (t.completed === true || String(t.status || "").toLowerCase() === "completed")) {
+          const hrs = parseFloat(t.estHours || 0);
+          if (Number.isFinite(hrs)) sum += hrs;
+        }
+      }
+      return sum;
+    }
+
+    function formatTaskHoursLabel(hoursSum) {
+      if (!Number.isFinite(hoursSum) || hoursSum <= 0) return "0 hrs";
+      if (hoursSum === 1) return "1 hr";
+      return hoursSum % 1 === 0 ? `${hoursSum} hrs` : `${hoursSum.toFixed(1)} hrs`;
+    }
+
+    function getVehicleParts(vehId) {
+      const vehicles = loadVehicles();
+      const v = vehicles.find(x => String(x.id) === String(vehId));
+      if (v && Array.isArray(v.parts)) return v.parts;
+      return getStorageArray(`vehicle_parts_${vehId}`);
+    }
+
+    function getVehicleLaborEntries(vehId) {
+      const vehicles = loadVehicles();
+      const v = vehicles.find(x => String(x.id) === String(vehId));
+      if (v && Array.isArray(v.labor)) return v.labor;
+      return getStorageArray(`vehicle_labor_${vehId}`);
+    }
+
+    function getVehicleCollection(vehicle, keyPrefix, embeddedKey) {
+      const stored = getStorageArray(`${keyPrefix}_${vehicle.id}`);
+      if (stored.length) return stored;
+      const embedded = Array.isArray(vehicle[embeddedKey]) ? vehicle[embeddedKey] : [];
+      return embedded;
+    }
+
+    function migrateLegacyKeysOntoVehicles() {
+      const vehicles = loadVehicles();
+      let dirty = false;
+      const legacyKeysToRemove = [];
+
+      vehicles.forEach(v => {
+        if (!v || typeof v !== "object") return;
+        let tookParts = false;
+        let tookTasks = false;
+        let tookLabor = false;
+
+        const beforeBuild = JSON.stringify({ bt: v.buildType, cs: v.customSegments, st: v.status });
+        ensureVehicleProjectSchema(v);
+        if (JSON.stringify({ bt: v.buildType, cs: v.customSegments, st: v.status }) !== beforeBuild) dirty = true;
+
+        if (!Array.isArray(v.parts)) {
+          v.parts = [];
+          dirty = true;
+        }
+        if (!Array.isArray(v.tasks)) {
+          v.tasks = [];
+          dirty = true;
+        }
+        if (!Array.isArray(v.labor)) {
+          v.labor = [];
+          dirty = true;
+        }
+
+        const pk = getStorageArray(`vehicle_parts_${v.id}`);
+        const tk = getStorageArray(`vehicle_tasks_${v.id}`);
+        const lk = getStorageArray(`vehicle_labor_${v.id}`);
+
+        if (v.parts.length === 0 && pk.length) {
+          v.parts = pk.slice();
+          dirty = true;
+          tookParts = true;
+        }
+        if (v.tasks.length === 0 && tk.length) {
+          v.tasks = tk.slice();
+          dirty = true;
+          tookTasks = true;
+        }
+        if (v.labor.length === 0 && lk.length) {
+          v.labor = lk.slice();
+          dirty = true;
+          tookLabor = true;
+        }
+
+        if (tookParts) legacyKeysToRemove.push(`vehicle_parts_${v.id}`);
+        if (tookTasks) legacyKeysToRemove.push(`vehicle_tasks_${v.id}`);
+        if (tookLabor) legacyKeysToRemove.push(`vehicle_labor_${v.id}`);
+      });
+
+      if (dirty) {
+        saveVehicles(vehicles);
+      }
+
+      legacyKeysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {}
+      });
+    }
+
+    function gatherGarageItemsForVehicle(vehicle) {
+      const vehicles = loadVehicles();
+      const v = vehicles.find(x => String(x.id) === String(vehicle.id));
+      if (!v) return { parts: [], tasks: [], labor: [] };
+      let parts = Array.isArray(v.parts) ? v.parts.slice() : [];
+      let tasks = Array.isArray(v.tasks) ? v.tasks.slice() : [];
+      let labor = Array.isArray(v.labor) ? v.labor.slice() : [];
+      if (!parts.length) parts = getStorageArray(`vehicle_parts_${v.id}`).slice();
+      if (!tasks.length) tasks = getStorageArray(`vehicle_tasks_${v.id}`).slice();
+      if (!labor.length) labor = getStorageArray(`vehicle_labor_${v.id}`).slice();
+      return { parts, tasks, labor };
+    }
+
+    function calculateVehicleCompletedLaborTotal(vehId) {
+      const laborEntries = getVehicleLaborEntries(vehId);
+      let sum = 0;
+      for (const entry of laborEntries) {
+        if (entry && entry.cost != null && (entry.complete === true || entry.completed === true)) {
+          sum += parseCost(entry.cost);
+        }
+      }
+      return sum;
+    }
+
+    function getVehiclePurchasePrice(vehId) {
+      const vehicles = loadVehicles();
+      const vehicle = vehicles.find(v => v.id == vehId);
+      return vehicle && typeof vehicle.vehiclePurchasePrice === "number" ? vehicle.vehiclePurchasePrice : 0;
+    }
+
+    function calculateVehiclePartsValue(vehId) {
+      const parts = getVehicleParts(vehId) || [];
+      let sum = 0;
+      for (const p of parts) {
+        if (p && String(p.status || "").toLowerCase() !== "needed") {
+          sum += parseCost(p.cost);
+        }
+      }
+      return sum;
+    }
+
+    // --- NEW: Utility to calculate Build Progress percentage for a vehicle
+    function calculateVehicleBuildProgress(vehId) {
+      const tasks = getVehicleTasks(vehId) || [];
+      const parts = getVehicleParts(vehId) || [];
+      // Tasks: percent complete
+      let tasksPercent = 0;
+      if (tasks.length > 0) {
+        const completedTasks = tasks.filter(t => !!t.completed).length;
+        tasksPercent = (completedTasks / tasks.length) * 100;
+      }
+      // Parts: percent installed
+      let partsPercent = 0;
+      if (parts.length > 0) {
+        const installedParts = parts.filter(p => p.status === "Installed").length;
+        partsPercent = (installedParts / parts.length) * 100;
+      }
+      // Average & rounding
+      let overall = 0;
+      if (tasks.length === 0 && parts.length === 0) {
+        overall = 0;
+      } else if (tasks.length === 0) {
+        overall = partsPercent;
+      } else if (parts.length === 0) {
+        overall = tasksPercent;
+      } else {
+        overall = (tasksPercent + partsPercent) / 2;
+      }
+      return Math.round(overall);
+    }
+
+    // --- Registration Badge logic & other dashboard functions unchanged from before ---
+    function regMonthToNumber(month) {
+      if (!month) return undefined;
+      const num = Number(month);
+      if (!isNaN(num) && num >= 1 && num <= 12) return num;
+      const lower = String(month).toLowerCase();
+      const months = [
+        "january","february","march","april","may","june",
+        "july","august","september","october","november","december"
+      ];
+      for(let i=0;i<12;i++){
+        if(lower.startsWith(months[i].slice(0,3))) return i+1;
+        if(lower===months[i]) return i+1;
+      }
+      return undefined;
+    }
+
+    function getVehicleRegStatus(vehId) {
+      const vehicles = loadVehicles();
+      const vehicle = vehicles.find(v => v && v.id == vehId);
+
+      let regMonth = vehicle && vehicle.regMonth != null ? vehicle.regMonth : "";
+      let regDay = vehicle && vehicle.regDay != null ? vehicle.regDay : "";
+      let regNonOp = vehicle && vehicle.regNonOp ? !!vehicle.regNonOp : false;
+
+      let fullRegExpiryKey = `vehicle_reg_expiry_${vehId}`;
+      let regExpiryStr = localStorage.getItem(fullRegExpiryKey);
+      let regExpiryDate = null;
+      if (regExpiryStr) {
+        let parsed = Date.parse(regExpiryStr);
+        if (!isNaN(parsed)) regExpiryDate = new Date(parsed);
+      }
+
+      if (!regExpiryDate && regMonth && regDay) {
+        const monthNum = regMonthToNumber(regMonth);
+        const dayNum = parseInt(regDay, 10);
+        if (monthNum && !isNaN(dayNum)) {
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          let expiryCand = new Date(currentYear, monthNum - 1, dayNum);
+          const nowYMD = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const expYMD = new Date(expiryCand.getFullYear(), expiryCand.getMonth(), expiryCand.getDate());
+          if (expYMD < nowYMD) {
+            expiryCand = new Date(currentYear + 1, monthNum - 1, dayNum);
+          }
+          regExpiryDate = expiryCand;
+        }
+      }
+
+      return {
+        regMonth,
+        regDay,
+        regNonOp,
+        regExpiryDate
+      };
+    }
+
+    function getRegBadgeHTML(status) {
+      if (!status) return '';
+      const { badgeClass, label } = status;
+      return `<span class="reg-badge ${badgeClass}">${label}</span>`;
+    }
+
+    function buildRegStatusBadgeForVehicle(vehId) {
+      const vehicles = loadVehicles();
+      const vehicle = vehicles.find(v => v && String(v.id) === String(vehId));
+      const REG_PREFIX = 'REG STATUS: ';
+
+      if (vehicle && vehicle.registrationStatus) {
+        const status = String(vehicle.registrationStatus).trim();
+        if (status === 'Non-Op') {
+          return { badgeClass: 'reg-badge-nonop', label: `${REG_PREFIX}NON-OP` };
+        }
+        if (status === 'Current') {
+          return { badgeClass: 'reg-badge-current', label: `${REG_PREFIX}CURRENT` };
+        }
+        if (status === 'Due') {
+          return { badgeClass: 'reg-badge-due', label: `${REG_PREFIX}DUE` };
+        }
+        if (status === 'Expired') {
+          return { badgeClass: 'reg-badge-expired', label: `${REG_PREFIX}EXPIRED` };
+        }
+      }
+
+      const { regNonOp, regExpiryDate } = getVehicleRegStatus(vehId);
+
+      if (regNonOp) {
+        return { badgeClass: 'reg-badge-nonop', label: `${REG_PREFIX}NON-OP` };
+      }
+
+      if (!regExpiryDate) {
+        return { badgeClass: 'reg-badge-not-set', label: `${REG_PREFIX}NOT SET` };
+      }
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const expiry = new Date(regExpiryDate);
+      expiry.setHours(0, 0, 0, 0);
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const deltaDays = Math.round((expiry - now) / msPerDay);
+
+      if (!Number.isFinite(deltaDays)) {
+        return { badgeClass: 'reg-badge-not-set', label: `${REG_PREFIX}NOT SET` };
+      }
+
+      if (deltaDays < 0) {
+        return { badgeClass: 'reg-badge-expired', label: `${REG_PREFIX}EXPIRED` };
+      }
+
+      if (deltaDays > 30) {
+        return { badgeClass: 'reg-badge-current', label: `${REG_PREFIX}CURRENT` };
+      }
+
+      const dueInDays = Math.max(0, deltaDays);
+      const dayWord = dueInDays === 1 ? "DAY" : "DAYS";
+      return { badgeClass: 'reg-badge-due', label: `${REG_PREFIX}DUE IN ${dueInDays} ${dayWord}` };
+    }
+
+    // -- Main garage total calculation --
+    function renderGarageInvestmentStats() {
+      const vehicles = filterProjectVehicles(loadVehicles());
+      let purchaseSum = 0, partsSum = 0, laborSum = 0, hoursSum = 0;
+
+      for (const vehicle of vehicles) {
+        // 1. Purchase Price
+        let vehiclePurchase = getVehiclePurchasePrice(vehicle.id);
+        if (isNaN(vehiclePurchase) || vehiclePurchase == null) vehiclePurchase = 0;
+        purchaseSum += vehiclePurchase;
+
+        // 2. Parts Costs (status !== 'Needed')
+        const partsArr = getVehicleParts(vehicle.id);
+        if (Array.isArray(partsArr)) {
+          for (const p of partsArr) {
+            if (p && String(p.status || "").toLowerCase() !== "needed") {
+              let cost = parseCost(p.cost);
+              if (!isNaN(cost) && cost != null) partsSum += cost;
+            }
+          }
+        }
+
+        // 3. Labor Costs (completed entries)
+        const laborEntries = getVehicleLaborEntries(vehicle.id);
+        if (Array.isArray(laborEntries)) {
+          for (const entry of laborEntries) {
+            if (entry && entry.cost != null && (entry.complete === true || entry.completed === true)) {
+              let cost = parseCost(entry.cost);
+              if (!isNaN(cost) && cost != null) laborSum += cost;
+            }
+          }
+        }
+
+        // 4. Hours from completed tasks
+        const tasksArr = getVehicleTasks(vehicle.id);
+        if (Array.isArray(tasksArr)) {
+          for (const t of tasksArr) {
+            if (t && (t.completed === true || String(t.status || "").toLowerCase() === "completed")) {
+              const hrs = parseFloat(t.estHours || 0);
+              if (Number.isFinite(hrs)) hoursSum += hrs;
+            }
+          }
+        }
+      }
+
+      if (isNaN(purchaseSum)) purchaseSum = 0;
+      if (isNaN(partsSum)) partsSum = 0;
+      if (isNaN(laborSum)) laborSum = 0;
+      if (isNaN(hoursSum)) hoursSum = 0;
+
+      const total = purchaseSum + partsSum + laborSum;
+      const ppEl = document.getElementById('garage-purchase-price');
+      const totEl = document.getElementById('garage-total-investment');
+      const breakdownEl = document.getElementById('garage-investment-breakdown');
+
+      function displayAmount(val) {
+        if (isNaN(val) || val == null) return "$0.00";
+        return "$" + Number(val).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+      }
+
+      if (ppEl) ppEl.textContent = displayAmount(purchaseSum);
+      if (totEl) totEl.textContent = displayAmount(total);
+
+      if (breakdownEl) {
+        const hoursLabel = formatTaskHoursLabel(hoursSum);
+        breakdownEl.innerHTML =
+          `<div class="garage-breakdown-grid">
+            <div class="garage-breakdown-head">Breakdown (all projects):</div>
+            <span class="garage-breakdown-label">Purchase</span>
+            <span class="garage-breakdown-value">${displayAmount(purchaseSum)}</span>
+            <span class="garage-breakdown-label">Parts Costs</span>
+            <span class="garage-breakdown-value">${displayAmount(partsSum)}</span>
+            <span class="garage-breakdown-label">Labor Costs</span>
+            <span class="garage-breakdown-value">${displayAmount(laborSum)}</span>
+            <span class="garage-breakdown-label">Hours</span>
+            <span class="garage-breakdown-value">${hoursLabel}</span>
+          </div>`;
+      }
+    }
+    // -- End main garage investment total --
+
+    // Remove a vehicle and all related data from localStorage
+    function deleteVehicleAndRelatedData(vehId) {
+      // Remove vehicle from vehicles array
+      let vehicles = loadVehicles();
+      vehicles = vehicles.filter(v => v.id != vehId);
+      saveVehicles(vehicles);
+
+      // Remove tasks, parts, reg expiry, AND labor for this vehicle
+      const keysToRemove = [
+        `vehicle_tasks_${vehId}`,
+        `vehicle_parts_${vehId}`,
+        `vehicle_reg_expiry_${vehId}`,
+        `vehicle_labor_${vehId}`,
+      ];
+      for (const k of keysToRemove) {
+        localStorage.removeItem(k);
+      }
+    }
+
+    function formatCardAmount(num) {
+      return isNaN(num) || num == null
+        ? "$0.00"
+        : "$" + Number(num).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function buildVehicleCardElement(vehicle) {
+      if (!vehicle || typeof vehicle.id === "undefined") return null;
+
+      const status = normalizeVehicleStatus(vehicle);
+      const percent = calculateVehicleBuildProgress(vehicle.id);
+      const encodedVehicleId = encodeURIComponent(vehicle.id);
+      const url = `vehicle-detail.html?id=${encodedVehicleId}`;
+      const regStatusBadgeObj = buildRegStatusBadgeForVehicle(vehicle.id);
+      const regBadgeHTML = getRegBadgeHTML(regStatusBadgeObj);
+
+      const vehiclePurchasePrice = getVehiclePurchasePrice(vehicle.id);
+      const partsValue = calculateVehiclePartsValue(vehicle.id);
+      const laborValue = calculateVehicleCompletedLaborTotal(vehicle.id);
+      const totalInvestment = vehiclePurchasePrice + partsValue + laborValue;
+      const vehicleHoursTotal = sumCompletedTaskHoursForVehicle(vehicle.id);
+      const totalHoursLabel = formatTaskHoursLabel(vehicleHoursTotal);
+      const cardWrapper = document.createElement("div");
+      cardWrapper.className = "vehicle-card";
+      if (status === "completed") {
+        cardWrapper.classList.add("vehicle-card--completed");
+      } else {
+        cardWrapper.classList.add("vehicle-card--active");
+      }
+
+      const card = document.createElement("a");
+      card.href = url;
+      card.className = "vehicle-card-body";
+      card.addEventListener("click", function () {
+        localStorage.setItem(LS_SELECTED_VEHICLE_ID_KEY, String(vehicle.id));
+      });
+
+      const displayTitle = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(" ").trim() || vehicle.name || "Vehicle";
+      card.innerHTML = `
+  <div class="vehicle-card-header">
+    <h3 class="vehicle-card-name">${displayTitle}</h3>
+  </div>
+  <div class="vehicle-card-meta${regBadgeHTML ? "" : " vehicle-card-meta--empty"}"${regBadgeHTML ? "" : ' aria-hidden="true"'}>
+    ${regBadgeHTML || ""}
+  </div>
+  <div class="vehicle-card-metrics" role="group" aria-label="Build totals">
+    <div class="vehicle-card-stat">
+      <span class="vehicle-card-stat-label">Purchase Price</span>
+      <span class="vehicle-card-stat-value">${formatCardAmount(vehiclePurchasePrice)}</span>
+    </div>
+    <div class="vehicle-card-stat vehicle-card-stat--highlight">
+      <span class="vehicle-card-stat-label">Total Into Vehicle</span>
+      <span class="vehicle-card-stat-value">${formatCardAmount(totalInvestment)}</span>
+    </div>
+    <div class="vehicle-card-stat vehicle-card-stat--highlight">
+      <span class="vehicle-card-stat-label">Total Hours</span>
+      <span class="vehicle-card-stat-value">${totalHoursLabel}</span>
+    </div>
+  </div>
+      `;
+
+      const progressTrack = document.createElement("div");
+      progressTrack.className = "progress-track";
+      const progressFill = document.createElement("div");
+      progressFill.className = "progress-fill";
+      progressFill.style.width = `${percent}%`;
+      progressTrack.appendChild(progressFill);
+
+      const progressWrap = document.createElement("div");
+      progressWrap.className = "vehicle-card-progress";
+      progressWrap.setAttribute("aria-hidden", "true");
+      progressWrap.appendChild(progressTrack);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "vehicle-delete-btn";
+      deleteBtn.innerHTML = "\u2715";
+      deleteBtn.title = "Delete Vehicle";
+      deleteBtn.setAttribute("aria-label", "Delete vehicle");
+      deleteBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        if (confirm("Are you sure? This will permanently remove vehicle and ALL corresponding data from the app.")) {
+          deleteVehicleAndRelatedData(vehicle.id);
+          renderVehicles();
+        }
+      });
+
+      cardWrapper.appendChild(card);
+
+      if (status === "active") {
+        const quick = document.createElement("div");
+        quick.className = "vehicle-card-quick-actions";
+        const gmLink = document.createElement("a");
+        gmLink.className = "bp-btn bp-btn-outline bp-garage-mode-btn";
+        gmLink.textContent = "Garage Mode";
+        gmLink.href = `garage-mode.html?id=${encodedVehicleId}`;
+        gmLink.addEventListener("click", function (e) {
+          e.stopPropagation();
+          localStorage.setItem(LS_SELECTED_VEHICLE_ID_KEY, String(vehicle.id));
+        });
+        quick.appendChild(gmLink);
+        cardWrapper.appendChild(quick);
+      }
+
+      cardWrapper.appendChild(progressWrap);
+      cardWrapper.appendChild(deleteBtn);
+      return cardWrapper;
+    }
+
+    const BP_EMPTY_FIRST_ENTRY =
+      "No items logged yet. Tap the button below to add your first entry!";
+
+    function renderVehicleListSection(parentId, vehicles, emptyMessage) {
+      const parent = document.getElementById(parentId);
+      if (!parent) return;
+      parent.innerHTML = "";
+      parent.classList.toggle("is-empty", !vehicles.length);
+      if (!vehicles.length) {
+        const empty = document.createElement("div");
+        empty.className = "vehicle-section-empty bp-empty-state";
+        empty.setAttribute("role", "status");
+        empty.textContent = emptyMessage;
+        parent.appendChild(empty);
+        return;
+      }
+      vehicles.forEach(vehicle => {
+        const card = buildVehicleCardElement(vehicle);
+        if (card) parent.appendChild(card);
+      });
+    }
+
+
+    function renderGarageIntelligence() {
+      const mount = document.getElementById("bi-garage-insights-mount");
+      if (!mount || !window.BuildPilotIntelligence) return;
+      const I = window.BuildPilotIntelligence;
+      const config = I.loadConfig();
+      const vehicles = loadVehicles();
+      const summary = I.analyzeGarageProjectVehicles(vehicles, config);
+      I.UI.renderGarageInsightsContent(mount, summary);
+    }
+
+    function wireHeaderActions() {
+      const infoBtn = document.getElementById("header-info-btn");
+      if (infoBtn && infoBtn.dataset.wired !== "1") {
+        infoBtn.dataset.wired = "1";
+        infoBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openInfoPanelModal();
+        });
+      }
+    }
+
+    function renderVehicles() {
+      const vehicles = filterProjectVehicles(loadVehicles()).filter(v => v && typeof v.id !== "undefined");
+      const active = vehicles.filter(v => normalizeVehicleStatus(v) === "active");
+      const completed = vehicles.filter(v => normalizeVehicleStatus(v) === "completed");
+      const completedSection = document.getElementById("completed-builds-section");
+
+      document.body.classList.toggle("bp-empty-above-primary-action", vehicles.length === 0);
+
+      if (!vehicles.length) {
+        renderVehicleListSection("vehicle-cards-active", [], BP_EMPTY_FIRST_ENTRY);
+        if (completedSection) completedSection.hidden = true;
+      } else {
+        if (completedSection) completedSection.hidden = false;
+        renderVehicleListSection(
+          "vehicle-cards-active",
+          active,
+          "No active builds yet. Tap the button below to add your first entry!"
+        );
+        renderVehicleListSection("vehicle-cards-completed", completed, "No completed projects yet.");
+      }
+
+      renderGarageInvestmentStats();
+      renderGarageIntelligence();
+    }
+
+
+    async function downloadMasterTemplateWorkbook() {
+      if (typeof ExcelJS === "undefined") throw new Error("ExcelJS failed to load.");
+      const workbook = new ExcelJS.Workbook();
+      ensureValidationListsSheet(workbook);
+      const logoBase64 = await loadBuildPilotLogoBase64();
+      const usedNames = new Set();
+      const newSheet = workbook.addWorksheet(safeSheetName("Add New Vehicle", usedNames));
+      applyManifestBrandHeaderRow(newSheet, workbook, logoBase64);
+      const blankVehicle = { name: "New Vehicle", status: "active" };
+      applyManifestMetaRowsToSheet(newSheet, blankVehicle, [], [], [], 0, 0);
+      newSheet.getCell("A2").value = "Vehicle: (New Vehicle)";
+      newSheet.getCell("A3").value = "Status: Active | Progress: 0%";
+      newSheet.getCell("A4").value = "Total Investment: $0.00 | Purchase: $0.00 | Completed Hours: 0 hrs | Organization: Standard systems";
+      newSheet.getCell("A5").value = "Registration Status: Not set | Expiry: — | 0 parts · 0 tasks · 0 labor";
+      newSheet.addRow([]);
+      newSheet.addRow(manifestLineItemHeaders());
+      for (let i = 0; i < MANIFEST_TEMPLATE_ITEM_ROWS; i += 1) {
+        newSheet.addRow([]);
+      }
+      applyManifestTemplateRowValidations(newSheet);
+      styleTemplateWorksheet(newSheet, MANIFEST_TEMPLATE_ITEM_ROWS);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Garage-Build-Planner.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function tryParseManifestGarageSheet(rows, sheetName) {
+      if (!rows || !rows.length) return null;
+      if (isSpreadsheetTemplateSheetName(sheetName)) return null;
+      const hdrIdx = rows.findIndex(r =>
+        String(r[0] || "").trim() === "Chapter" &&
+        String(r[1] || "").trim() === "Type" &&
+        String(r[2] || "").trim() === "Item Name"
+      );
+      if (hdrIdx === -1) return null;
+      const header = rows[hdrIdx].map(h => String(h || "").trim());
+      const col = {};
+      header.forEach((name, i) => { col[name] = i; });
+      const isNewFormat = Object.prototype.hasOwnProperty.call(col, "Hours") && Object.prototype.hasOwnProperty.call(col, "Cost");
+      const isLegacyFormat = Object.prototype.hasOwnProperty.call(col, "Cost/Price");
+      if (!isNewFormat && !isLegacyFormat) return null;
+
+      function normalizeExcelDate(value) {
+        if (value == null) return "";
+        if (value instanceof Date && !isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+        const raw = String(value).trim();
+        if (!raw) return "";
+        if (/^\d+(\.\d+)?$/.test(raw)) {
+          const serial = Number(raw);
+          const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+          const dt = new Date(excelEpoch.getTime() + Math.round(serial) * 86400000);
+          if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+        }
+        const parsed = new Date(raw);
+        return !isNaN(parsed.getTime()) ? parsed.toISOString().slice(0, 10) : raw;
+      }
+
+      function parseLegacyCostCell(raw, type) {
+        const s = raw == null ? "" : String(raw).trim();
+        if (type === "Part") {
+          const v = parseCost(s.replace(/^\$/, ""));
+          return { partPrice: Number.isFinite(v) ? v : 0, laborCost: 0, costHours: 0 };
+        }
+        let laborCost = 0;
+        let costHours = 0;
+        const dollar = s.match(/\$[\d,]+\.?\d*/);
+        if (dollar) laborCost = parseCost(dollar[0]);
+        const hrs = s.match(/([\d.]+)\s*hrs?/i);
+        if (hrs) costHours = parseCost(hrs[1]);
+        if (type === "Outside Labor") {
+          if (!dollar && s) laborCost = parseCost(s.replace(/^\$/, ""));
+          return { partPrice: 0, laborCost: Number.isFinite(laborCost) ? laborCost : 0, costHours: 0 };
+        }
+        return { partPrice: 0, laborCost, costHours };
+      }
+
+      let project = {};
+      for (let ri = 0; ri < hdrIdx; ri += 1) {
+        const extracted = extractManifestProjectNameFromTitleLine(rows[ri] ? rows[ri][0] : "");
+        if (extracted) {
+          project.Project_Name = extracted;
+          break;
+        }
+      }
+      for (let ri = 0; ri < hdrIdx; ri += 1) {
+        const line = String(rows[ri] ? rows[ri][0] : "");
+        const pp = line.match(/Purchase Price:\s*\$?([\d,]+\.?\d*)/i);
+        if (pp) project.Purchase_Price = parseCost(pp[1]);
+        if (/registration/i.test(line)) {
+          project.Reg_NonOp = /non-op/i.test(line);
+          const exp = line.match(/Expiry:\s*(.+)$/i);
+          if (exp) {
+            const chunk = exp[1].trim();
+            if (chunk && chunk !== "?" && chunk !== "-" && chunk !== "?" && !/^not set$/i.test(chunk)) {
+              project.Reg_Expiry = normalizeExcelDate(chunk);
+            }
+          }
+        }
+      }
+
+      const items = [];
+      for (let i = hdrIdx + 1; i < rows.length; i += 1) {
+        const row = rows[i];
+        const rowChapterRaw = String(row[col.Chapter] == null ? "" : row[col.Chapter]).trim();
+        const rowTypeRaw = String(row[col.Type] == null ? "" : row[col.Type]).trim();
+        const rowName = String(row[col["Item Name"]] == null ? "" : row[col["Item Name"]]).trim();
+        const type = normalizeCsvType(rowTypeRaw);
+        if (rowChapterRaw.startsWith("#") || rowTypeRaw.startsWith("#")) continue;
+        if (shouldSkipSpreadsheetImportRow(rowName, rowChapterRaw, rowTypeRaw)) continue;
+        if (!type || !rowName) continue;
+        let partPrice = 0;
+        let laborCost = 0;
+        let costHours = 0;
+        let vendor = "";
+        if (isNewFormat) {
+          const hoursRaw = row[col["Hours"]];
+          const costRaw = row[col["Cost"]];
+          const hrsVal = parseCost(String(hoursRaw == null ? "" : hoursRaw).trim());
+          const costVal = parseCost(String(costRaw == null ? "" : costRaw).replace(/^\$/, "").trim());
+          if (type === "Part") { partPrice = Number.isFinite(costVal) ? costVal : 0; }
+          else { laborCost = Number.isFinite(costVal) ? costVal : 0; costHours = Number.isFinite(hrsVal) ? hrsVal : 0; }
+          if (Object.prototype.hasOwnProperty.call(col, "Shop / Vendor")) {
+            vendor = String(row[col["Shop / Vendor"]] == null ? "" : row[col["Shop / Vendor"]]).trim();
+          }
+        } else {
+          const costRaw = row[col["Cost/Price"]];
+          ({ partPrice, laborCost, costHours } = parseLegacyCostCell(costRaw, type));
+        }
+        items.push({
+          chapter: normalizeSystemCategory(rowChapterRaw),
+          type,
+          name: rowName,
+          vendor,
+          description: Object.prototype.hasOwnProperty.call(col, "Description") ? String(row[col.Description] == null ? "" : row[col.Description]).trim() : "",
+          partPrice,
+          laborCost,
+          costHours,
+          status: normalizeCsvStatus(String(row[col["Status"]] == null ? "" : row[col["Status"]]).trim(), type),
+          partUrl: String(row[col["URL"]] == null ? "" : row[col["URL"]]).trim(),
+          trackingNumber: String(row[col["Tracking"]] == null ? "" : row[col["Tracking"]]).trim()
+        });
+      }
+
+      if (!project.Project_Name) project.Project_Name = String(sheetName || "").trim();
+      if (isSpreadsheetTemplateVehicleName(project.Project_Name)) project.Project_Name = "";
+      if (shouldRejectSpreadsheetImportPayload({ project, items }, sheetName)) return null;
+      return sanitizeImportPayload({ project, items });
+    }
+
+    function parseSheetRows(rows, sheetName) {
+      if (isSpreadsheetTemplateSheetName(sheetName)) return null;
+      const manifestPayload = tryParseManifestGarageSheet(rows, sheetName);
+      if (manifestPayload) return manifestPayload;
+      if (!rows.length) return null;
+      const header = rows[0].map(h => String(h || "").trim());
+      const index = {};
+      header.forEach((name, i) => { index[name] = i; });
+      const required = templateHeaders();
+      if (!required.every(k => Object.prototype.hasOwnProperty.call(index, k))) return null;
+      const payload = { project: {}, items: [] };
+      const normalizeDate = (value) => {
+        if (value == null) return "";
+        if (value instanceof Date && !isNaN(value.getTime())) return value.toISOString().slice(0, 10);
+        const raw = String(value).trim();
+        if (!raw) return "";
+        if (/^\d+(\.\d+)?$/.test(raw)) {
+          const serial = Number(raw);
+          const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+          const dt = new Date(excelEpoch.getTime() + Math.round(serial) * 86400000);
+          if (!isNaN(dt.getTime())) return dt.toISOString().slice(0, 10);
+        }
+        const parsed = new Date(raw);
+        return !isNaN(parsed.getTime()) ? parsed.toISOString().slice(0, 10) : raw;
+      };
+      for (let i = 1; i < rows.length; i += 1) {
+        const row = rows[i];
+        const rowObj = {};
+        required.forEach(key => { rowObj[key] = row[index[key]]; });
+        const name = String(rowObj.Name == null ? "" : rowObj.Name).trim();
+        const type = normalizeCsvType(rowObj.Type);
+        const projectName = String(rowObj.Project_Name == null ? "" : rowObj.Project_Name).trim();
+        if (shouldSkipSpreadsheetImportRow(name, projectName)) continue;
+        if (!payload.project.Project_Name && projectName && !isSpreadsheetTemplateVehicleName(projectName)) {
+          payload.project = {
+            Project_Name: projectName,
+            Purchase_Price: String(rowObj.Purchase_Price ?? "").trim() === "" ? null : parseCost(rowObj.Purchase_Price),
+            Reg_Expiry: normalizeDate(rowObj.Reg_Expiry),
+            Reg_NonOp: /^(true|1|yes)$/i.test(String(rowObj.Reg_NonOp ?? "").trim())
+          };
+        }
+        if (!type || !name) continue;
+        payload.items.push({
+          chapter: normalizeSystemCategory(rowObj.Chapter),
+          type,
+          name,
+          description: String(rowObj.Description ?? "").trim(),
+          partPrice: parseCost(rowObj.Part_Price),
+          laborCost: parseCost(rowObj.Labor_Cost),
+          costHours: parseCost(rowObj.Cost_Hours),
+          status: normalizeCsvStatus(rowObj.Status, type),
+          partUrl: String(rowObj.Part_URL ?? "").trim(),
+          trackingNumber: String(rowObj.Tracking_Number ?? "").trim()
+        });
+      }
+      if (!payload.project.Project_Name) payload.project.Project_Name = String(sheetName || "").trim();
+      if (isSpreadsheetTemplateVehicleName(payload.project.Project_Name)) payload.project.Project_Name = "";
+      if (shouldRejectSpreadsheetImportPayload(payload, sheetName)) return null;
+      return sanitizeImportPayload(payload);
+    }
+
+    function applyGarageImport(payloads, mode) {
+      let vehicles = loadVehicles();
+      if (mode === "replace") {
+        vehicles.forEach(v => {
+          localStorage.removeItem(`vehicle_tasks_${v.id}`);
+          localStorage.removeItem(`vehicle_parts_${v.id}`);
+          localStorage.removeItem(`vehicle_labor_${v.id}`);
+          localStorage.removeItem(`vehicle_reg_expiry_${v.id}`);
+          localStorage.removeItem(`vehicle_system_state_${v.id}`);
+        });
+        vehicles = [];
+      }
+      const byName = new Map(vehicles.map(v => [String(v.name || "").toLowerCase(), v]));
+      let created = 0;
+      let itemsAdded = 0;
+      payloads.forEach(payload => {
+        const safePayload = sanitizeImportPayload(payload);
+        if (!safePayload) return;
+        const pName = String(safePayload.project.Project_Name || "").trim();
+        if (!pName || isSpreadsheetTemplateVehicleName(pName)) return;
+        if (shouldRejectSpreadsheetImportPayload(safePayload, pName)) return;
+        let vehicle = byName.get(pName.toLowerCase());
+        if (!vehicle) {
+          vehicle = {
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            name: pName,
+            buildType: "standard",
+            customSegments: [],
+            status: "active",
+            vehiclePurchasePrice: 0,
+            totalLaborCost: 0,
+            parts: [],
+            tasks: [],
+            labor: []
+          };
+          ensureVehicleProjectSchema(vehicle);
+          vehicles.push(vehicle);
+          byName.set(pName.toLowerCase(), vehicle);
+          created += 1;
+        } else {
+          hydrateVehicleRecordCollections(vehicle);
+        }
+        const parts = mode === "replace"
+          ? []
+          : sanitizeImportArray(Array.isArray(vehicle.parts) && vehicle.parts.length
+            ? vehicle.parts.slice()
+            : getStorageArray(`vehicle_parts_${vehicle.id}`));
+        const tasks = mode === "replace"
+          ? []
+          : sanitizeImportArray(Array.isArray(vehicle.tasks) && vehicle.tasks.length
+            ? vehicle.tasks.slice()
+            : getStorageArray(`vehicle_tasks_${vehicle.id}`));
+        const labor = mode === "replace"
+          ? []
+          : sanitizeImportArray(Array.isArray(vehicle.labor) && vehicle.labor.length
+            ? vehicle.labor.slice()
+            : getStorageArray(`vehicle_labor_${vehicle.id}`));
+        safePayload.items.forEach(item => {
+          itemsAdded += 1;
+          if (item.type === "Part") parts.push({ id: `part${Date.now()}${Math.floor(Math.random()*1000)}`, name: item.name, category: item.chapter, status: item.status, cost: sanitizeImportNumber(item.partPrice, 0), partUrl: item.partUrl, trackingNumber: item.trackingNumber });
+          else if (item.type === "Task") {
+            const taskDone = ["complete", "completed", "installed"].includes(String(item.status || "").toLowerCase());
+            const hrs = sanitizeImportNumber(item.costHours, 0);
+            tasks.push({ id: `task${Date.now()}${Math.floor(Math.random()*1000)}`, name: item.name, description: item.description, category: item.chapter, estHours: hrs > 0 ? hrs : "", laborCost: sanitizeImportNumber(item.laborCost, 0), status: taskDone ? "Complete" : "Pending", completed: taskDone, trackingNumber: item.trackingNumber });
+          } else {
+            const laborDone = ["complete", "completed", "installed"].includes(String(item.status || "").toLowerCase());
+            labor.push({ id: `labor${Date.now()}${Math.floor(Math.random()*1000)}`, shop: item.name, description: item.description, category: item.chapter, cost: sanitizeImportNumber(item.laborCost, 0), status: laborDone ? "Complete" : "Pending", complete: laborDone, completed: laborDone, trackingNumber: item.trackingNumber });
+          }
+        });
+        if (safePayload.project.Purchase_Price != null && Number.isFinite(safePayload.project.Purchase_Price)) {
+          vehicle.vehiclePurchasePrice = safePayload.project.Purchase_Price;
+        }
+        if (typeof safePayload.project.Reg_NonOp === "boolean") vehicle.regNonOp = safePayload.project.Reg_NonOp;
+        if (safePayload.project.Reg_Expiry) {
+          const dt = new Date(`${safePayload.project.Reg_Expiry}T00:00:00`);
+          if (!isNaN(dt.getTime())) {
+            localStorage.setItem(getRegExpiryStorageKey(vehicle.id), dt.toISOString());
+            vehicle.regMonth = String(dt.getMonth() + 1);
+            vehicle.regDay = String(dt.getDate());
+          }
+        } else if (mode === "replace") {
+          localStorage.removeItem(getRegExpiryStorageKey(vehicle.id));
+          vehicle.regMonth = "";
+          vehicle.regDay = "";
+        }
+        vehicle.parts = parts;
+        vehicle.tasks = tasks;
+        vehicle.labor = labor;
+        ensureVehicleProjectSchema(vehicle);
+        [`vehicle_parts_${vehicle.id}`, `vehicle_tasks_${vehicle.id}`, `vehicle_labor_${vehicle.id}`].forEach(key => {
+          try {
+            localStorage.removeItem(key);
+          } catch (e) {}
+        });
+      });
+      saveVehicles(vehicles);
+      renderVehicles();
+      showResultModal(created, itemsAdded);
+    }
+
+    function showChoiceModal(payloads) {
+      const overlay = document.getElementById("modal-overlay");
+      overlay.innerHTML = "";
+      const modal = document.createElement("div");
+      modal.className = "modal-content";
+      const title = document.createElement("div");
+      title.className = "modal-title";
+      title.textContent = "Garage Sync";
+      const details = document.createElement("div");
+      details.style.color = "var(--svc-text-soft)";
+      details.className = "text-sm mb-3";
+      const count = payloads.reduce((sum, p) => sum + p.items.length, 0);
+      details.textContent = `${count} items across ${payloads.length} tabs detected.`;
+      const existingNames = new Set(loadVehicles().map(v => String(v.name || "").toLowerCase()));
+      let creates = 0;
+      let updates = 0;
+      const preview = document.createElement("div");
+      preview.className = "text-xs mb-3";
+      preview.style.color = "var(--svc-text-soft)";
+      preview.style.border = "1px solid var(--svc-border)";
+      preview.style.borderRadius = "10px";
+      preview.style.padding = "0.55rem 0.6rem";
+      preview.style.maxHeight = "170px";
+      preview.style.overflowY = "auto";
+      payloads.forEach(payload => {
+        const pName = String(payload.project.Project_Name || "Unnamed").trim();
+        const action = existingNames.has(pName.toLowerCase()) ? "Update" : "Create";
+        if (action === "Create") creates += 1;
+        else updates += 1;
+        const line = document.createElement("div");
+        line.textContent = `${action}: ${pName} (${payload.items.length} items)`;
+        preview.appendChild(line);
+      });
+      const summary = document.createElement("div");
+      summary.className = "text-xs mb-2";
+      summary.style.color = "var(--svc-text)";
+      summary.style.fontWeight = "700";
+      summary.textContent = `Creates: ${creates} | Updates: ${updates}`;
+      const row = document.createElement("div");
+      row.className = "modal-btn-row";
+      const merge = document.createElement("button");
+      merge.textContent = "Merge";
+      merge.onclick = () => { overlay.classList.remove("active"); applyGarageImport(payloads, "append"); };
+      const replace = document.createElement("button");
+      replace.textContent = "Replace Entire Garage";
+      replace.onclick = () => { overlay.classList.remove("active"); applyGarageImport(payloads, "replace"); };
+      const cancel = document.createElement("button");
+      cancel.textContent = "Cancel";
+      cancel.onclick = () => overlay.classList.remove("active");
+      row.appendChild(merge); row.appendChild(replace); row.appendChild(cancel);
+      modal.appendChild(title); modal.appendChild(details); modal.appendChild(summary); modal.appendChild(preview); modal.appendChild(row);
+      overlay.appendChild(modal);
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.remove("active"); };
+      overlay.classList.add("active");
+    }
+
+    function showResultModal(vehicleCount, itemCount) {
+      const overlay = document.getElementById("modal-overlay");
+      overlay.innerHTML = "";
+      const modal = document.createElement("div");
+      modal.className = "modal-content";
+      const title = document.createElement("div");
+      title.className = "modal-title";
+      title.textContent = "Garage Updated";
+      const details = document.createElement("div");
+      details.className = "text-sm mb-3";
+      details.style.color = "var(--svc-text-soft)";
+      details.textContent = `${vehicleCount} Vehicles imported, ${itemCount} Parts/Tasks added.`;
+      const close = document.createElement("button");
+      close.className = "w-full";
+      close.textContent = "Close";
+      close.onclick = () => overlay.classList.remove("active");
+      modal.appendChild(title); modal.appendChild(details); modal.appendChild(close);
+      overlay.appendChild(modal);
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.remove("active"); };
+      overlay.classList.add("active");
+    }
+
+    const BUILDPILOT_DISPLAY_VERSION = "BuildPilot v1.0";
+
+    const USER_MANUAL_LEGEND_CHAPTERS = [
+      { color: "#9e9e9e", label: "Gray outline", desc: "Chapter not started" },
+      { color: "#2196f3", label: "Blue outline", desc: "Chapter in progress" },
+      { color: "#4caf50", label: "Green outline", desc: "Chapter complete" }
+    ];
+    const USER_MANUAL_LEGEND_HOME = [
+      { color: "#2196f3", label: "Blue card", desc: "Active build (My Builds)" },
+      { color: "#8e8e93", label: "Gray card", desc: "Completed build (archived)" }
+    ];
+    const USER_MANUAL_LEGEND_PARTS = [
+      { color: "#d97706", label: "Orange", desc: "Needed", fill: true },
+      { color: "#6b4c9a", label: "Purple", desc: "Ordered", fill: true },
+      { color: "#c9a84c", label: "Gold", desc: "Received", fill: true },
+      { color: "#1d7340", label: "Green", desc: "Installed", fill: true }
+    ];
+    const USER_MANUAL_WORKFLOW = [
+      "Home: tap Add Vehicle or open a build card.",
+      "Inside a build: expand a chapter, add parts, tasks, or outside labor.",
+      "Update statuses as you order, receive, and install parts.",
+      "Garage Mode: big buttons for quick updates while you work.",
+      "Complete Project when finished; it moves to Completed Projects.",
+      "Templates: backup (Save Project Backup) or restore on a new phone."
+    ];
+    const USER_MANUAL_TIPS = [
+      "Your data stays on this device. No login is required.",
+      "Back up often via 'Save project backup file' or templates."
+    ];
+    const USER_MANUAL_BUILD_TYPES = [
+      "When you add a vehicle, choose Standard or Custom under Build Configuration. That setting controls how your build is split into chapters (segments).",
+      "Standard projects use a fixed set of automotive chapters — Engine, Brakes, Suspension, and the rest. Pick Standard for typical car or truck restorations where those system names match how you work.",
+      "Custom projects start with no chapters. On the build detail screen, add your own segment names to match your project — for example by phase, subsystem, or budget area. Parts, tasks, and outside labor are organized inside those segments."
+    ];
+
+    function showModalOverlay(overlay) {
+      if (!overlay) return;
+      overlay.onclick = (e) => {
+        if (e.target === overlay) overlay.classList.remove("active");
+      };
+      window.requestAnimationFrame(() => overlay.classList.add("active"));
+    }
+
+    function escapeUserManualHtml(text) {
+      return String(text == null ? "" : text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    /** Bold **Standard** and **Custom** wherever they appear in guide copy. */
+    function formatUserManualText(text) {
+      return escapeUserManualHtml(text)
+        .replace(/\bStandard\b/g, "<strong>Standard</strong>")
+        .replace(/\bCustom\b/g, "<strong>Custom</strong>");
+    }
+
+    function appendUserManualInstructionList(parent, items, options) {
+      const ul = document.createElement("ul");
+      ul.className = "user-manual-bullet-list";
+      if (options && options.compact) ul.classList.add("user-manual-bullet-list--compact");
+      (items || []).forEach((text) => {
+        const li = document.createElement("li");
+        li.innerHTML = formatUserManualText(text);
+        ul.appendChild(li);
+      });
+      parent.appendChild(ul);
+    }
+
+    function appendUserManualLegend(body, title, items) {
+      const block = document.createElement("section");
+      block.className = "user-manual-legend-block";
+      if (title) {
+        const h = document.createElement("h3");
+        h.className = "user-manual-legend-title";
+        h.textContent = title;
+        block.appendChild(h);
+      }
+      const grid = document.createElement("div");
+      grid.className = "user-manual-legend-grid";
+      items.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "user-manual-legend-row";
+        const swatch = document.createElement("span");
+        swatch.className = "user-manual-swatch" + (item.fill ? " user-manual-swatch--fill" : "");
+        swatch.style.color = item.color;
+        swatch.setAttribute("aria-hidden", "true");
+        const text = document.createElement("div");
+        text.className = "user-manual-legend-label";
+        text.textContent = item.label;
+        const desc = document.createElement("span");
+        desc.className = "user-manual-legend-desc";
+        desc.textContent = item.desc;
+        text.appendChild(desc);
+        row.appendChild(swatch);
+        row.appendChild(text);
+        grid.appendChild(row);
+      });
+      block.appendChild(grid);
+      body.appendChild(block);
+    }
+
+    function appendUserManualSection(body, heading, items) {
+      const section = document.createElement("section");
+      section.className = "user-manual-section";
+      const title = document.createElement("h3");
+      title.className = "user-manual-section-heading";
+      if (heading === "Standard vs Custom projects") {
+        title.innerHTML = "<strong>Standard</strong> vs <strong>Custom</strong> projects";
+      } else {
+        title.innerHTML = formatUserManualText(heading);
+      }
+      section.appendChild(title);
+      appendUserManualInstructionList(section, items);
+      body.appendChild(section);
+    }
+
+    function renderUserManualContent(body) {
+      const intro = document.createElement("p");
+      intro.className = "user-manual-intro";
+      intro.innerHTML = formatUserManualText(
+        "Track parts, tasks, labor, and progress for project builds."
+      );
+      body.appendChild(intro);
+
+      appendUserManualSection(body, "Standard vs Custom projects", USER_MANUAL_BUILD_TYPES);
+
+      const colorsHeading = document.createElement("section");
+      colorsHeading.className = "user-manual-section";
+      const colorsTitle = document.createElement("h3");
+      colorsTitle.className = "user-manual-section-heading";
+      colorsTitle.textContent = "Understanding the colors";
+      colorsHeading.appendChild(colorsTitle);
+      body.appendChild(colorsHeading);
+
+      appendUserManualLegend(body, "Chapters (segments)", USER_MANUAL_LEGEND_CHAPTERS);
+      appendUserManualLegend(body, "Home screen", USER_MANUAL_LEGEND_HOME);
+      appendUserManualLegend(body, "Part status", USER_MANUAL_LEGEND_PARTS);
+
+      const flowSection = document.createElement("section");
+      flowSection.className = "user-manual-section";
+      const flowTitle = document.createElement("h3");
+      flowTitle.className = "user-manual-section-heading";
+      flowTitle.textContent = "Workflow";
+      flowSection.appendChild(flowTitle);
+      appendUserManualInstructionList(flowSection, USER_MANUAL_WORKFLOW, { compact: true });
+      body.appendChild(flowSection);
+
+      const tipsSection = document.createElement("section");
+      tipsSection.className = "user-manual-section";
+      const tipsTitle = document.createElement("h3");
+      tipsTitle.className = "user-manual-section-heading";
+      tipsTitle.textContent = "Tips";
+      tipsSection.appendChild(tipsTitle);
+      appendUserManualInstructionList(tipsSection, USER_MANUAL_TIPS, { compact: true });
+      body.appendChild(tipsSection);
+    }
+
+    function openUserManualModal() {
+      const overlay = document.getElementById("modal-overlay");
+      if (!overlay) return;
+      overlay.innerHTML = "";
+
+      const modal = document.createElement("div");
+      modal.className = "modal-content user-manual-sheet";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-labelledby", "user-manual-title");
+
+      const header = document.createElement("div");
+      header.className = "user-manual-header user-manual-header--guide";
+
+      const headerTop = document.createElement("div");
+      headerTop.className = "user-manual-header-top";
+
+      const titleWrap = document.createElement("div");
+      const title = document.createElement("h2");
+      title.id = "user-manual-title";
+      title.className = "user-manual-title";
+      title.textContent = "User Guide";
+      const subtitle = document.createElement("p");
+      subtitle.className = "user-manual-subtitle";
+      subtitle.textContent = "At a glance";
+      titleWrap.appendChild(title);
+      titleWrap.appendChild(subtitle);
+
+      const backBtn = document.createElement("button");
+      backBtn.type = "button";
+      backBtn.className = "user-manual-back-btn bubble-tactile";
+      backBtn.textContent = "Back";
+      backBtn.onclick = () => openInfoPanelModal();
+
+      headerTop.appendChild(titleWrap);
+      headerTop.appendChild(backBtn);
+      header.appendChild(headerTop);
+
+      const body = document.createElement("div");
+      body.className = "user-manual-body";
+      renderUserManualContent(body);
+
+      const footer = document.createElement("footer");
+      footer.className = "user-manual-footer";
+      const dismissBtn = document.createElement("button");
+      dismissBtn.type = "button";
+      dismissBtn.className = "user-manual-dismiss-btn bubble-tactile";
+      dismissBtn.textContent = "Close";
+      dismissBtn.onclick = () => overlay.classList.remove("active");
+      footer.appendChild(dismissBtn);
+
+      modal.appendChild(header);
+      modal.appendChild(body);
+      modal.appendChild(footer);
+      modal.addEventListener("click", (e) => e.stopPropagation());
+      overlay.appendChild(modal);
+      showModalOverlay(overlay);
+    }
+
+    function openInfoPanelModal() {
+      const overlay = document.getElementById("modal-overlay");
+      if (!overlay) return;
+      overlay.innerHTML = "";
+
+      const modal = document.createElement("div");
+      modal.className = "modal-content info-panel-sheet";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-labelledby", "info-panel-title");
+
+      const header = document.createElement("div");
+      header.className = "info-panel-header";
+
+      const version = document.createElement("p");
+      version.className = "info-panel-version";
+      version.textContent = BUILDPILOT_DISPLAY_VERSION;
+
+      const title = document.createElement("h2");
+      title.id = "info-panel-title";
+      title.className = "info-panel-title";
+      title.textContent = "BuildPilot";
+
+      const tagline = document.createElement("p");
+      tagline.className = "info-panel-tagline";
+      tagline.textContent = "Plan and track your garage builds on this device.";
+
+      header.appendChild(version);
+      header.appendChild(title);
+      header.appendChild(tagline);
+
+      const body = document.createElement("div");
+      body.className = "info-panel-body";
+      const hint = document.createElement("p");
+      hint.className = "info-panel-hint";
+      hint.textContent = "Need help, want to share feedback, or found a bug? Use the buttons below.";
+      body.appendChild(hint);
+
+      const footer = document.createElement("footer");
+      footer.className = "info-panel-footer";
+
+      const guideBtn = document.createElement("button");
+      guideBtn.type = "button";
+      guideBtn.className = "info-panel-action-btn bubble-tactile";
+      guideBtn.textContent = "User Guide";
+      guideBtn.onclick = () => openUserManualModal();
+
+      const aboutBtn = document.createElement("button");
+      aboutBtn.type = "button";
+      aboutBtn.className = "info-panel-action-btn bubble-tactile";
+      aboutBtn.textContent = "About";
+      aboutBtn.onclick = () => openAboutModal();
+
+      const feedbackBtn = document.createElement("button");
+      feedbackBtn.type = "button";
+      feedbackBtn.className = "info-panel-action-btn bubble-tactile";
+      feedbackBtn.textContent = "Feedback";
+      feedbackBtn.onclick = () => openSupportModal("feedback");
+
+      const bugBtn = document.createElement("button");
+      bugBtn.type = "button";
+      bugBtn.className = "info-panel-action-btn bubble-tactile";
+      bugBtn.textContent = "Report Bug";
+      bugBtn.onclick = () => openSupportModal("bug");
+
+      footer.appendChild(guideBtn);
+      footer.appendChild(aboutBtn);
+      footer.appendChild(feedbackBtn);
+      footer.appendChild(bugBtn);
+
+      modal.appendChild(header);
+      modal.appendChild(body);
+      modal.appendChild(footer);
+      modal.addEventListener("click", (e) => e.stopPropagation());
+      overlay.appendChild(modal);
+      showModalOverlay(overlay);
+    }
+
+    const ABOUT_INTRO_PARAGRAPHS = [
+      "A lack of motivation kills most projects, and that motivation fades when you simply don\u2019t know where to start.",
+      "It becomes difficult to track money going out and parts coming in, and eventually your project ends up in the corner collecting dust for years. Decades, even. We don\u2019t get that time back.",
+      "The goal of BuildPilot is to keep that motivation alive by helping you stay organized so you can eventually drive the project you started.",
+      "You won\u2019t find ads or pop-ups in this app. No distractions, just a tool to help you track costs, parts, tasks, outside labor, and even registration status to avoid late fees.",
+      "Use Garage Mode to track how long tasks take, record voice notes, and capture photos while you work.",
+      "If you downloaded BuildPilot in the middle of an existing build, use the template to fill out parts, tasks, and outside labor on your PC, then upload it to quickly bring the app up to speed with your project.",
+      "If you have suggestions, ideas for new features, or find any bugs, use the Feedback or Report Bug buttons."
+    ];
+    const ABOUT_PRIVACY_BULLETS = [
+      "100% Private Data: All your tasks, parts records, and progress calculations are saved directly onto your device. No tracking, no mandatory cloud accounts.",
+      "Creating Backups: Tap 'Save Project Backup File' to export your complete garage history into a simple backup file that you can save to files, text, or email to yourself.",
+      "Moving Devices: If you replace your phone, simply install BuildPilot on the new device, tap 'Restore Project from File', and load your backup file to resume right where you left off. Alternatively, you can download and upload .xlsx templates instead."
+    ];
+
+    function appendAboutParagraph(container, text) {
+      const p = document.createElement("p");
+      p.className = "about-modal-p";
+      p.textContent = text;
+      container.appendChild(p);
+    }
+
+    function renderAboutModalContent(container) {
+      ABOUT_INTRO_PARAGRAPHS.forEach((text) => appendAboutParagraph(container, text));
+
+      const divider = document.createElement("p");
+      divider.className = "about-modal-divider";
+      divider.textContent = "--------------------------------------------------";
+      divider.setAttribute("aria-hidden", "true");
+      container.appendChild(divider);
+
+      const sectionTitle = document.createElement("p");
+      sectionTitle.className = "about-modal-section-title";
+      sectionTitle.textContent = "\uD83D\uDCE6 USER GUIDE & PRIVACY";
+      container.appendChild(sectionTitle);
+
+      const list = document.createElement("ul");
+      list.className = "about-modal-list";
+      ABOUT_PRIVACY_BULLETS.forEach((text) => {
+        const li = document.createElement("li");
+        li.textContent = text;
+        list.appendChild(li);
+      });
+      container.appendChild(list);
+    }
+
+    function openAboutModal() {
+      const overlay = document.getElementById("modal-overlay");
+      if (!overlay) return;
+      overlay.innerHTML = "";
+
+      const modal = document.createElement("div");
+      modal.className = "modal-content user-manual-sheet";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-labelledby", "about-modal-title");
+
+      const header = document.createElement("div");
+      header.className = "user-manual-header user-manual-header--guide";
+      const headerTop = document.createElement("div");
+      headerTop.className = "user-manual-header-top";
+      const titleWrap = document.createElement("div");
+      const title = document.createElement("h2");
+      title.id = "about-modal-title";
+      title.className = "user-manual-title";
+      title.textContent = "About";
+      const subtitle = document.createElement("p");
+      subtitle.className = "user-manual-subtitle";
+      subtitle.textContent = "Why we built BuildPilot";
+      titleWrap.appendChild(title);
+      titleWrap.appendChild(subtitle);
+      const backBtn = document.createElement("button");
+      backBtn.type = "button";
+      backBtn.className = "user-manual-back-btn bubble-tactile";
+      backBtn.textContent = "Back";
+      backBtn.onclick = () => openInfoPanelModal();
+      headerTop.appendChild(titleWrap);
+      headerTop.appendChild(backBtn);
+      header.appendChild(headerTop);
+
+      const body = document.createElement("div");
+      body.className = "user-manual-body user-manual-body--scroll";
+      const prose = document.createElement("div");
+      prose.className = "about-modal-prose";
+      renderAboutModalContent(prose);
+      body.appendChild(prose);
+
+      const footer = document.createElement("footer");
+      footer.className = "user-manual-footer";
+      const dismissBtn = document.createElement("button");
+      dismissBtn.type = "button";
+      dismissBtn.className = "user-manual-dismiss-btn bubble-tactile";
+      dismissBtn.textContent = "Close";
+      dismissBtn.onclick = () => overlay.classList.remove("active");
+      footer.appendChild(dismissBtn);
+
+      modal.appendChild(header);
+      modal.appendChild(body);
+      modal.appendChild(footer);
+      modal.addEventListener("click", (e) => e.stopPropagation());
+      overlay.appendChild(modal);
+      showModalOverlay(overlay);
+    }
+
+    async function submitSupportToFormspree(kind, message, email) {
+      const submissionSource = kind === "bug" ? "Report Bug modal" : "Feedback modal";
+      const payload = {
+        _subject: kind === "bug" ? "BuildPilot Bug Report" : "BuildPilot Feedback",
+        email: email || "",
+        message,
+        submissionSource,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "unknown"
+      };
+      const res = await fetch(FORMSPREE_SUPPORT_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        throw new Error("Send failed");
+      }
+    }
+
+    function closeActiveModalOverlay() {
+      const overlay = document.getElementById("modal-overlay");
+      if (!overlay) return;
+      overlay.classList.remove("active");
+      overlay.innerHTML = "";
+    }
+
+    function openSupportModal(kind) {
+      const overlay = document.getElementById("modal-overlay");
+      if (!overlay) return;
+      overlay.innerHTML = "";
+
+      const isBug = kind === "bug";
+      const modal = document.createElement("div");
+      modal.className = "modal-content user-manual-sheet";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+
+      const header = document.createElement("div");
+      header.className = "user-manual-header user-manual-header--guide";
+      const headerTop = document.createElement("div");
+      headerTop.className = "user-manual-header-top";
+      const titleWrap = document.createElement("div");
+      const title = document.createElement("h2");
+      title.className = "user-manual-title";
+      title.textContent = isBug ? "Report Bug" : "Feedback";
+      const subtitle = document.createElement("p");
+      subtitle.className = "user-manual-subtitle";
+      subtitle.textContent = isBug
+        ? "Describe what went wrong"
+        : "Tell us what would help";
+      titleWrap.appendChild(title);
+      titleWrap.appendChild(subtitle);
+      const backBtn = document.createElement("button");
+      backBtn.type = "button";
+      backBtn.className = "user-manual-back-btn bubble-tactile";
+      backBtn.textContent = "Back";
+      backBtn.onclick = () => openInfoPanelModal();
+      headerTop.appendChild(titleWrap);
+      headerTop.appendChild(backBtn);
+      header.appendChild(headerTop);
+
+      const body = document.createElement("div");
+      body.className = "user-manual-body";
+      const form = document.createElement("form");
+      form.className = "mission-support-form";
+      form.style.padding = "0.85rem 1.25rem 1rem";
+      form.noValidate = true;
+
+      const msgLabel = document.createElement("label");
+      msgLabel.className = "mission-support-field-label";
+      msgLabel.textContent = isBug ? "What happened?" : "Your message";
+      const msgArea = document.createElement("textarea");
+      msgArea.className = "mission-support-textarea";
+      msgArea.required = true;
+      msgArea.placeholder = isBug
+        ? "Steps to reproduce, what you expected, what you saw instead?"
+        : "Ideas, praise, or things that confused you?";
+      msgLabel.appendChild(msgArea);
+
+      const emailLabel = document.createElement("label");
+      emailLabel.className = "mission-support-field-label";
+      emailLabel.textContent = "Email (optional)";
+      const emailInput = document.createElement("input");
+      emailInput.type = "email";
+      emailInput.className = "mission-support-email-input";
+      emailInput.placeholder = "you@example.com";
+      emailInput.autocomplete = "email";
+      emailLabel.appendChild(emailInput);
+
+      const errEl = document.createElement("p");
+      errEl.className = "mission-support-error";
+      errEl.hidden = true;
+
+      const btnRow = document.createElement("div");
+      btnRow.className = "mission-support-btn-row";
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "mission-support-back-btn bubble-tactile";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.onclick = () => openInfoPanelModal();
+      const sendBtn = document.createElement("button");
+      sendBtn.type = "submit";
+      sendBtn.className = "mission-support-send-btn bubble-tactile";
+      sendBtn.textContent = "Send";
+
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(sendBtn);
+      form.appendChild(msgLabel);
+      form.appendChild(emailLabel);
+      form.appendChild(errEl);
+      form.appendChild(btnRow);
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        errEl.hidden = true;
+        msgArea.classList.remove("is-invalid");
+        const text = (msgArea.value || "").trim();
+        if (!text) {
+          msgArea.classList.add("is-invalid");
+          errEl.textContent = "Please enter a message.";
+          errEl.hidden = false;
+          return;
+        }
+        sendBtn.disabled = true;
+        sendBtn.textContent = "Sending...";
+        try {
+          await submitSupportToFormspree(kind, text, (emailInput.value || "").trim());
+          closeActiveModalOverlay();
+          window.alert("Thank you! Your report is now with our engineering team.");
+        } catch (_err) {
+          sendBtn.textContent = "Send";
+          sendBtn.disabled = false;
+          window.alert("Send failed. Please check your connection and try again.");
+        }
+      });
+
+      body.appendChild(form);
+      modal.appendChild(header);
+      modal.appendChild(body);
+      modal.addEventListener("click", (e) => e.stopPropagation());
+      overlay.appendChild(modal);
+      showModalOverlay(overlay);
+      window.requestAnimationFrame(() => msgArea.focus());
+    }
+
+    function openMissionModal() {
+      openInfoPanelModal();
+    }
+
+    function wireBulkActions() {
+      const downloadBtn = document.getElementById("bulk-download-template-btn");
+      const uploadBtn = document.getElementById("bulk-upload-data-btn");
+      const uploadInput = document.getElementById("bulk-upload-input");
+      if (!downloadBtn || !uploadBtn || !uploadInput) return;
+      downloadBtn.addEventListener("click", () => {
+        downloadMasterTemplateWorkbook().catch(err => alert(err && err.message ? err.message : "Template download failed."));
+        closeTemplatesPanel();
+      });
+      uploadBtn.addEventListener("click", () => {
+        uploadInput.value = "";
+        uploadInput.click();
+        closeTemplatesPanel();
+      });
+      uploadInput.addEventListener("change", () => {
+        const file = uploadInput.files && uploadInput.files[0];
+        if (!file) return;
+        const lower = String(file.name || "").toLowerCase();
+        const isXlsx = lower.endsWith(".xlsx");
+        const isCsv = lower.endsWith(".csv");
+        if (!isXlsx && !isCsv) return alert("Please upload .xlsx or .csv.");
+        const reader = new FileReader();
+        reader.onload = async () => {
+          try {
+            const payloads = [];
+            if (isXlsx) {
+              if (typeof ExcelJS === "undefined") throw new Error("ExcelJS failed to load.");
+              const wb = new ExcelJS.Workbook();
+              await wb.xlsx.load(reader.result);
+              wb.worksheets.forEach(ws => {
+                if (isSpreadsheetTemplateSheetName(ws.name)) return;
+                const rows = [];
+                for (let r = 1; r <= ws.rowCount; r += 1) {
+                  const row = ws.getRow(r);
+                  const values = [];
+                  let hasValue = false;
+                  for (let c = 1; c <= manifestLineItemHeaders().length; c += 1) {
+                    const v = extractExcelJsCellValue(row.getCell(c));
+                    if (v !== "" && v != null) hasValue = true;
+                    values.push(v == null ? "" : v);
+                  }
+                  if (hasValue) rows.push(values);
+                }
+                const payload = parseSheetRows(rows, ws.name);
+                if (payload && !shouldRejectSpreadsheetImportPayload(payload, ws.name)) payloads.push(payload);
+              });
+            } else {
+              const rows = String(reader.result || "").split(/\r?\n/).map(line => line.split(","));
+              const payload = parseSheetRows(rows, "Imported CSV");
+              if (payload && !shouldRejectSpreadsheetImportPayload(payload, "Imported CSV")) payloads.push(payload);
+            }
+            if (!payloads.length) throw new Error("No valid vehicle sheets found.");
+            showChoiceModal(payloads);
+          } catch (err) {
+            alert(err && err.message ? err.message : "Could not parse build sheet.");
+          }
+        };
+        if (isXlsx) reader.readAsArrayBuffer(file); else reader.readAsText(file);
+      });
+    }
+
+    function openAddVehicleModal() {
+      const overlay = document.getElementById("modal-overlay");
+      overlay.innerHTML = "";
+
+      const modal = document.createElement("div");
+      modal.className = "modal-content";
+      modal.style.cssText = "min-width:320px; max-width:420px; width:95vw;";
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "modal-title";
+      titleEl.textContent = "Add Vehicle";
+      modal.appendChild(titleEl);
+
+      function fieldGroup(labelText, inputEl) {
+        const g = document.createElement("div"); g.className = "av-field-group";
+        const lbl = document.createElement("label"); lbl.className = "av-field-label";
+        lbl.textContent = labelText; g.appendChild(lbl); g.appendChild(inputEl);
+        return g;
+      }
+      function textInput(placeholder, type) {
+        const el = document.createElement("input");
+        el.type = type || "text"; el.className = "av-field-input";
+        el.placeholder = placeholder; return el;
+      }
+
+      const yearInp  = textInput("e.g. 1969");
+      const makeInp  = textInput("e.g. Chevrolet");
+      const modelInp = textInput("e.g. Camaro");
+      const targetCompletionInp = document.createElement("input");
+      targetCompletionInp.type = "date";
+      targetCompletionInp.className = "av-field-input";
+
+      const regStatusSel = document.createElement("select");
+      regStatusSel.className = "av-field-select";
+      regStatusSel.setAttribute("aria-label", "Registration status");
+      [
+        { value: "", label: "Select status", disabled: true },
+        { value: "Current", label: "Current" },
+        { value: "Due", label: "Due" },
+        { value: "Expired", label: "Expired" },
+        { value: "Non-Op", label: "Non-Op" }
+      ].forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        if (opt.disabled) {
+          o.disabled = true;
+          o.selected = true;
+        }
+        regStatusSel.appendChild(o);
+      });
+
+      const vinInp   = textInput("Optional");
+      const priceInp = textInput("0.00", "number");
+      priceInp.min = "0"; priceInp.step = "0.01";
+
+      const formStack = document.createElement("div");
+      formStack.className = "av-form-stack";
+
+      const ymRow = document.createElement("div"); ymRow.className = "av-grid-2";
+      ymRow.appendChild(fieldGroup("Year", yearInp));
+      ymRow.appendChild(fieldGroup("Make", makeInp));
+
+      formStack.appendChild(ymRow);
+      formStack.appendChild(fieldGroup("Model", modelInp));
+      formStack.appendChild(fieldGroup("Estimated Target Completion", targetCompletionInp));
+      formStack.appendChild(fieldGroup("Registration Status", regStatusSel));
+      formStack.appendChild(fieldGroup("VIN", vinInp));
+      formStack.appendChild(fieldGroup("Purchase Price ($)", priceInp));
+
+      let selectedBuildType = "standard";
+      const buildTypeGroup = document.createElement("div");
+      buildTypeGroup.className = "av-field-group";
+      const buildTypeLabel = document.createElement("label");
+      buildTypeLabel.className = "av-field-label";
+      buildTypeLabel.textContent = "Build Configuration";
+      const buildTypeSwitch = document.createElement("div");
+      buildTypeSwitch.className = "av-build-type-switch";
+      buildTypeSwitch.setAttribute("role", "group");
+      buildTypeSwitch.setAttribute("aria-label", "Build configuration");
+
+      function setBuildTypeChoice(nextType) {
+        selectedBuildType = normalizeBuildType(nextType);
+        standardBtn.setAttribute("aria-pressed", selectedBuildType === "standard" ? "true" : "false");
+        customBtn.setAttribute("aria-pressed", selectedBuildType === "custom" ? "true" : "false");
+      }
+
+      const standardBtn = document.createElement("button");
+      standardBtn.type = "button";
+      standardBtn.className = "av-build-type-option";
+      standardBtn.textContent = "Standard";
+      standardBtn.setAttribute("aria-pressed", "true");
+      standardBtn.onclick = () => setBuildTypeChoice("standard");
+
+      const customBtn = document.createElement("button");
+      customBtn.type = "button";
+      customBtn.className = "av-build-type-option";
+      customBtn.textContent = "Custom";
+      customBtn.setAttribute("aria-pressed", "false");
+      customBtn.onclick = () => setBuildTypeChoice("custom");
+
+      buildTypeSwitch.appendChild(standardBtn);
+      buildTypeSwitch.appendChild(customBtn);
+      buildTypeGroup.appendChild(buildTypeLabel);
+      buildTypeGroup.appendChild(buildTypeSwitch);
+      formStack.appendChild(buildTypeGroup);
+
+      modal.appendChild(formStack);
+
+      const btnRow = document.createElement("div"); btnRow.className = "modal-btn-row";
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button"; cancelBtn.className = "modal-btn-cancel";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.onclick = () => overlay.classList.remove("active");
+
+      const submitBtn = document.createElement("button");
+      submitBtn.type = "button"; submitBtn.className = "modal-btn-primary";
+      submitBtn.textContent = "Add Vehicle";
+      submitBtn.onclick = () => {
+        const year  = yearInp.value.trim();
+        const make  = makeInp.value.trim();
+        const model = modelInp.value.trim();
+        if (!year)  { yearInp.focus();  return; }
+        if (!make)  { makeInp.focus();  return; }
+        if (!model) { modelInp.focus(); return; }
+
+        const registrationStatus = regStatusSel.value;
+        if (!registrationStatus) { regStatusSel.focus(); return; }
+
+        const targetCompletionDate = targetCompletionInp.value.trim();
+
+        const name = `${year} ${make} ${model}`;
+        const vehicles = loadVehicles();
+        if (vehicles.some(v => (v.name || "").toLowerCase() === name.toLowerCase())) {
+          alert("This vehicle already exists.");
+          return;
+        }
+
+        const id = Date.now() + Math.floor(Math.random() * 1000);
+        const ppNum = parseCost(priceInp.value) || 0;
+
+        const buildType = normalizeBuildType(selectedBuildType);
+        vehicles.push(ensureVehicleProjectSchema({
+          id, name, year, make, model,
+          vin: vinInp.value.trim(),
+          vehicleMode: "project",
+          buildType,
+          customSegments: [],
+          status: "active",
+          vehiclePurchasePrice: ppNum,
+          targetCompletionDate,
+          registrationStatus,
+          regNonOp: registrationStatus === "Non-Op",
+          totalLaborCost: 0,
+          parts: [], tasks: [], labor: []
+        }));
+        saveVehicles(vehicles);
+
+        overlay.classList.remove("active");
+        renderVehicles();
+      };
+
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(submitBtn);
+      modal.appendChild(btnRow);
+      overlay.appendChild(modal);
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.classList.remove("active"); };
+      overlay.classList.add("active");
+
+      yearInp.focus();
+    }
+
+    function measureFluidCollapsePanel(panel) {
+      if (!panel) return 800;
+      const inner = panel.querySelector('.project-stats-collapse-inner');
+      const target = inner || panel;
+      return Math.max(Math.ceil(target.scrollHeight), 1);
+    }
+
+    function setFluidCollapsePanel(panel, open) {
+      if (!panel) return;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) {
+        panel.classList.toggle('is-open', open);
+        return;
+      }
+      if (open) {
+        panel.classList.add('is-open');
+        panel.style.setProperty('--fluid-collapse-measured', `${measureFluidCollapsePanel(panel)}px`);
+        requestAnimationFrame(() => {
+          panel.style.setProperty('--fluid-collapse-measured', `${measureFluidCollapsePanel(panel)}px`);
+        });
+        return;
+      }
+      panel.style.setProperty('--fluid-collapse-measured', `${panel.scrollHeight}px`);
+      requestAnimationFrame(() => {
+        panel.classList.remove('is-open');
+        panel.style.removeProperty('--fluid-collapse-measured');
+      });
+    }
+
+    function wireMutualToolbarToggles(configs) {
+      configs.forEach(({ toggleId, panelId }) => {
+        const btn = document.getElementById(toggleId);
+        const panel = document.getElementById(panelId);
+        if (!btn || !panel) return;
+        btn.addEventListener('click', function () {
+          const open = !panel.classList.contains('is-open');
+          configs.forEach(({ toggleId: otherToggleId, panelId: otherPanelId }) => {
+            if (otherPanelId === panelId) return;
+            const otherPanel = document.getElementById(otherPanelId);
+            const otherBtn = document.getElementById(otherToggleId);
+            setFluidCollapsePanel(otherPanel, false);
+            if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+          });
+          setFluidCollapsePanel(panel, open);
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      });
+    }
+
+    function wireProjectStatsToggle() {
+      wireMutualToolbarToggles([
+        { toggleId: 'templates-toggle', panelId: 'templates-panel' },
+        { toggleId: 'project-stats-toggle', panelId: 'project-stats-panel' }
+      ]);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.BuildPilotStorage && window.BuildPilotStorage.ensureBetaCleanStorageForTrial) {
+        window.BuildPilotStorage.ensureBetaCleanStorageForTrial();
+      }
+      migrateLegacyKeysOntoVehicles();
+      renderVehicles();
+      wireProjectStatsToggle();
+      wireHeaderActions();
+      const addVehicleBtn = document.getElementById('add-vehicle-btn');
+      if (addVehicleBtn) addVehicleBtn.addEventListener('click', openAddVehicleModal);
+      const addVehicleThumb = document.getElementById('add-vehicle-thumb');
+      if (addVehicleThumb) {
+        addVehicleThumb.addEventListener('click', function () {
+          document.getElementById('add-vehicle-btn')?.click();
+        });
+      }
+      wireBulkActions();
+      wireVaultActions();
+      const headerLogo = document.querySelector(".app-header-logo");
+      if (headerLogo && typeof window.BUILDPILOT_LOGO_DATA_URL === "string" && window.BUILDPILOT_LOGO_DATA_URL.startsWith("data:image/")) {
+        headerLogo.src = window.BUILDPILOT_LOGO_DATA_URL;
+      }
+      // Keep dashboard totals/cards synced after bulk imports from detail pages.
+      window.addEventListener('focus', renderVehicles);
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) renderVehicles();
+      });
+      window.addEventListener('pageshow', renderVehicles);
+      window.addEventListener('buildpilot:vehicles-updated', renderVehicles);
+      window.addEventListener('storage', function (e) {
+        if (e.key === LS_VEHICLES_KEY || e.key === LEGACY_LS_VEHICLES_KEY) renderVehicles();
+      });
+    });
+  </script>
+</body>
+</html>

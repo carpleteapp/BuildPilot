@@ -1,0 +1,957 @@
+/* ==========================================================================
+   BUILDPILOT PREMIUM UX UTILITY OVERRIDES
+   Target: Clean Text Contrast, Pro Tap Margins, High-End Automotive UI
+   Load after buildpilot-ux.css
+   ========================================================================== */
+
+:root {
+  --bp-true-black: #000000;
+  --bp-panel-bg: #0d0d11;
+  --bp-panel-card: #14141c;
+  --bp-accent-glow: #3b9eff;
+  --bp-accent-success: #2ed573;
+  --bp-text-primary: #ffffff;
+  --bp-text-secondary: #8e8e93;
+  --bp-text-muted: #545456;
+  --bp-divider: #1f1f2e;
+  --bp-card-border: rgba(255, 255, 255, 0.08);
+
+  /* Bottom navigation bar (index, inventory, detail, journal) */
+  --bp-bottom-nav-height: 52px;
+  --bp-bottom-nav-font-size: 0.72rem;
+  --bp-bottom-nav-pad-x: 0.75rem;
+  --bp-bottom-nav-gap: 0.5rem;
+  --bp-bottom-nav-track-max: 28rem;
+  --bp-bottom-nav-inactive-text: #6e6e73;
+  --bp-bottom-nav-inactive-border: #2a2a36;
+  --bp-bottom-nav-inactive-bg: #14141c;
+  --bp-bottom-nav-active-text: #ffffff;
+  --bp-bottom-nav-active-border: var(--bp-accent-glow);
+  --bp-bottom-nav-active-bg: #1a2a42;
+
+  /* Sync shared tokens */
+  --bp-bg: var(--bp-true-black);
+  --bp-panel: var(--bp-panel-bg);
+  --bp-panel-raised: var(--bp-panel-card);
+  --bp-panel-elevated: #1a1a24;
+  --bp-text: var(--bp-text-primary);
+  --bp-text-silver: #d4d8e0;
+  --bp-text-soft: var(--bp-text-secondary);
+  --bp-text-subtle: var(--bp-text-muted);
+  --bp-neon: var(--bp-accent-success);
+  --bp-neon-hi: #5ae88e;
+  --bp-neon-lo: #22b85c;
+  --bp-accent: var(--bp-accent-glow);
+  --bp-accent-hi: #6eb8ff;
+  --svc-text: var(--bp-text-primary);
+  --svc-text-soft: var(--bp-text-secondary);
+  --svc-text-subtle: var(--bp-text-muted);
+  --svc-panel: var(--bp-panel-bg);
+  --svc-panel-raised: var(--bp-panel-card);
+}
+
+/* Safari mobile — edge-to-edge true black */
+html,
+body {
+  background-color: var(--bp-true-black) !important;
+  color: var(--bp-text-primary) !important;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 1. TYPOGRAPHY SHARPENING & CONTRAST */
+h1,
+h2,
+h3,
+.vehicle-title,
+.vehicle-card-name,
+.vehicle-hero-title,
+.gm-title,
+.inv-title,
+.bj-page-title,
+.screen-title,
+.app-header-title,
+.brand-header-title,
+.info-panel-title,
+.modal-title,
+.system-folder-title,
+.chapter-item-preview-title,
+.list-item-title {
+  font-family: "Archivo", sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--bp-text-primary) !important;
+}
+
+h1,
+.vehicle-hero-title,
+.brand-header-title,
+.inv-title,
+.bj-page-title,
+.gm-title {
+  text-transform: none;
+}
+
+h2,
+h3,
+.screen-title,
+.dashboard-section-title,
+.system-folder-title {
+  text-transform: uppercase;
+}
+
+p,
+span,
+label,
+.text-sm,
+.text-xs,
+.meta-label,
+.inv-sub,
+.bj-subtitle,
+.gm-sub,
+.list-item-subtitle,
+.vehicle-card-stat-label,
+.vehicle-card-price-label,
+.dashboard-label,
+.reg-status-label,
+.input-label,
+.segment-status-label {
+  color: var(--bp-text-secondary);
+}
+
+strong,
+b,
+.highlight-value,
+.vehicle-card-stat-value,
+.vehicle-card-price-val.total,
+#garage-total-investment {
+  color: var(--bp-text-primary) !important;
+}
+
+/* 2. PREMIUM CARD LAYOUTS & PADDING (not .vehicle-card — see overlap fix above) */
+.card:not(.vehicle-card),
+.widget,
+.part-row:not(.inv-part-card),
+.task-item,
+.list-item-card,
+.bj-card,
+.gm-feed-item,
+.gm-summary-card {
+  background: var(--bp-panel-card) !important;
+  border: 1px solid var(--bp-divider) !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  margin-bottom: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+/* Vehicle cards — fixed height matches active + archived (ux tokens) */
+.vehicle-card,
+.list-stack > .vehicle-card,
+[id*="vehicle-card"],
+.card.vehicle-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  height: var(--bp-vehicle-card-height, 16rem) !important;
+  min-height: var(--bp-vehicle-card-height, 16rem) !important;
+  max-height: var(--bp-vehicle-card-height, 16rem) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  margin-bottom: 12px !important;
+  background-color: #14141c !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+/* Completed / archived project cards — muted gray, shorter (no Garage Mode row) */
+.vehicle-card.vehicle-card--completed,
+.list-stack > .vehicle-card.vehicle-card--completed,
+#vehicle-cards-completed .vehicle-card {
+  height: var(--bp-vehicle-card-height-completed, 14.25rem) !important;
+  min-height: var(--bp-vehicle-card-height-completed, 14.25rem) !important;
+  max-height: var(--bp-vehicle-card-height-completed, 14.25rem) !important;
+  background-color: var(--bp-archived-fill, rgba(120, 120, 128, 0.16)) !important;
+  border-color: var(--bp-archived-border, rgba(142, 142, 147, 0.42)) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.38) !important;
+}
+
+.vehicle-card.vehicle-card--completed .vehicle-card-name,
+.list-stack > .vehicle-card.vehicle-card--completed .vehicle-card-name {
+  color: rgba(235, 235, 245, 0.72) !important;
+}
+
+.vehicle-card.vehicle-card--completed .vehicle-card-stat-label,
+.vehicle-card.vehicle-card--completed .vehicle-card-stat-value,
+.vehicle-card.vehicle-card--completed .vehicle-card-stat--highlight .vehicle-card-stat-value {
+  color: var(--bp-archived-muted, #98989d) !important;
+}
+
+.vehicle-card.vehicle-card--completed .progress-fill {
+  opacity: 0.88 !important;
+}
+
+.vehicle-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+.vehicle-card p,
+.vehicle-card div,
+.vehicle-card span,
+.vehicle-card-body p,
+.vehicle-card-body div,
+.vehicle-card-body span {
+  line-height: 1.5 !important;
+}
+
+.vehicle-card-header,
+.vehicle-card-meta,
+.vehicle-card-metrics,
+.vehicle-card-stat,
+.vehicle-card-price-line {
+  margin-bottom: 0 !important;
+  flex-shrink: 0;
+}
+
+.vehicle-card-name {
+  line-height: 1.35 !important;
+  margin-bottom: 2px !important;
+}
+
+.vehicle-card-meta {
+  flex: 0 0 var(--bp-vehicle-card-meta-height, 1.375rem) !important;
+  min-height: var(--bp-vehicle-card-meta-height, 1.375rem) !important;
+  max-height: var(--bp-vehicle-card-meta-height, 1.375rem) !important;
+  padding: 2px 0 !important;
+}
+
+.vehicle-card-metrics {
+  flex: 1 1 auto !important;
+  min-height: var(--bp-vehicle-card-metrics-min, 4.15rem) !important;
+  padding-top: 8px !important;
+  margin-top: 0 !important;
+  gap: 8px !important;
+}
+
+.vehicle-card .vehicle-card-progress {
+  flex: 0 0 var(--bp-vehicle-card-progress-block, 1.3rem) !important;
+  height: var(--bp-vehicle-card-progress-block, 1.3rem) !important;
+  min-height: var(--bp-vehicle-card-progress-block, 1.3rem) !important;
+  max-height: var(--bp-vehicle-card-progress-block, 1.3rem) !important;
+  padding: 0.35rem var(--bp-vehicle-card-pad-x, 1.15rem) 0.55rem !important;
+}
+
+.vehicle-card .vehicle-card-quick-actions {
+  flex: 0 0 var(--bp-vehicle-card-quick-actions-height, 3.25rem) !important;
+  height: var(--bp-vehicle-card-quick-actions-height, 3.25rem) !important;
+  min-height: var(--bp-vehicle-card-quick-actions-height, 3.25rem) !important;
+  max-height: var(--bp-vehicle-card-quick-actions-height, 3.25rem) !important;
+}
+
+.archive-tag,
+.status-alert-line,
+.reg-badge,
+[class*="archive"]:not(.vehicle-card-ribbon):not(.completed-ribbon) {
+  display: inline-block !important;
+  margin-top: 4px !important;
+  margin-bottom: 6px !important;
+  padding: 4px 8px !important;
+  line-height: 1.35 !important;
+}
+
+.vehicle-card-ribbon,
+.completed-ribbon {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+.card:active,
+.part-row:active:not(.inv-part-card),
+.inv-part-card:active,
+.task-item:active,
+.list-item-card:active,
+.bj-card:active,
+.gm-feed-item:active {
+  transform: scale(0.99);
+  border-color: var(--bp-accent-glow) !important;
+}
+
+.vehicle-card:active {
+  transform: scale(0.995);
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Chapter rows inside folders — keep stack layout */
+.system-folder-body .list-item-card.chapter-item-row {
+  border-radius: 0 !important;
+  margin-bottom: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.system-folder {
+  background: var(--bp-panel-bg) !important;
+  border: 1px solid var(--bp-divider) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45) !important;
+  margin-bottom: 12px !important;
+}
+
+/* 3. TOUCH TARGET SAFETY (48px min, 16px type on focus) */
+button:not(.status-pill):not(.part-status-pill):not(.inv-status-badge):not(.inv-part-card),
+.btn,
+.bp-btn,
+.inv-btn:not(.bp-bottom-nav-item),
+.bj-btn:not(.bp-bottom-nav-item),
+.gm-nav-btn,
+select:not(.card-status-select),
+input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+.clickable-trigger,
+.filter-tab,
+.inv-tab,
+.system-tab-btn,
+.bj-timeline-chip,
+.bp-mode-tab {
+  min-height: 48px !important;
+  padding: 10px 16px !important;
+  font-size: 16px !important;
+  border-radius: 8px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.chapter-item-preview {
+  min-height: 48px !important;
+  padding: 12px 16px !important;
+  font-size: 16px !important;
+  border-radius: 8px !important;
+  display: grid !important;
+  align-items: center;
+}
+
+.chapter-item-row select.status-select.card-status-select {
+  min-height: 44px !important;
+  padding: 6px 28px 6px 10px !important;
+  font-size: 14px !important;
+}
+
+/* Icon / compact controls — preserve square tap target */
+.dashboard-info-btn,
+.dashboard-config-btn,
+.inv-back-btn,
+.bj-back-btn,
+.bj-icon-btn,
+.gm-back-btn,
+.vehicle-delete-btn,
+.trash-btn,
+.bi-panel-icon-btn,
+.bi-config-btn,
+.bi-info-btn {
+  padding: 0 !important;
+  min-width: 48px !important;
+}
+
+.vehicle-card .vehicle-delete-btn {
+  padding: 0 !important;
+  min-width: var(--bp-vehicle-delete-size, 28px) !important;
+  min-height: var(--bp-vehicle-delete-size, 28px) !important;
+  width: var(--bp-vehicle-delete-size, 28px) !important;
+  height: var(--bp-vehicle-delete-size, 28px) !important;
+  max-width: var(--bp-vehicle-delete-size, 28px) !important;
+  max-height: var(--bp-vehicle-delete-size, 28px) !important;
+}
+
+/* Status pills — compact badges */
+.status-pill,
+.part-status-pill,
+.inv-status-badge,
+.bp-status-pill {
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  padding: 4px 10px !important;
+  border-radius: 6px !important;
+  min-height: auto !important;
+  line-height: 1.2 !important;
+}
+
+/* 4. INTERACTIVE ROWS & SEPARATORS */
+input[type="checkbox"]:not(.uniform-checkbox) {
+  width: 24px !important;
+  height: 24px !important;
+  accent-color: var(--bp-accent-success) !important;
+  cursor: pointer;
+}
+
+.uniform-checkbox:checked {
+  background: rgba(46, 213, 115, 0.15) !important;
+  border-color: var(--bp-accent-success) !important;
+}
+.uniform-checkbox:checked::after,
+.uniform-checkbox:checked:after {
+  background: var(--bp-accent-success) !important;
+}
+
+hr,
+.divider {
+  border: 0 !important;
+  height: 1px !important;
+  background: var(--bp-divider) !important;
+  margin: 16px 0 !important;
+}
+
+.project-stats-insights-mount,
+.vault-actions {
+  border-top: 1px solid var(--bp-divider) !important;
+  padding-top: 16px !important;
+  margin-top: 16px !important;
+}
+
+.garage-breakdown-head {
+  border-bottom: 1px solid var(--bp-divider) !important;
+  padding-bottom: 12px !important;
+  margin-bottom: 8px !important;
+}
+
+/* ==========================================================================
+   BOTTOM NAVIGATION BAR — unified across index / inventory / detail / journal
+   ========================================================================== */
+
+/* Frosted bar shell (page bottom nav only — not every <nav>) */
+.bp-index-thumb-dock,
+.inv-bottom-nav,
+.bj-bottom-nav,
+.detail-bottom-nav {
+  background-color: rgba(13, 13, 17, 0.94) !important;
+  background-image: none !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-top: 1px solid var(--bp-divider) !important;
+  box-sizing: border-box !important;
+  pointer-events: none;
+}
+
+.bp-index-thumb-dock {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 48 !important;
+  display: flex !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: var(--bp-index-dock-pad-y) max(1rem, env(safe-area-inset-left, 0px))
+    var(--bp-index-dock-bottom-clearance)
+    max(1rem, env(safe-area-inset-right, 0px)) !important;
+}
+
+.inv-bottom-nav,
+.bj-bottom-nav {
+  padding: 0.625rem max(0.85rem, env(safe-area-inset-left, 0px))
+    calc(0.625rem + env(safe-area-inset-bottom, 0px))
+    max(0.85rem, env(safe-area-inset-right, 0px)) !important;
+}
+
+.detail-bottom-nav {
+  display: flex !important;
+  justify-content: center !important;
+  padding: 0.625rem max(1rem, env(safe-area-inset-left, 0px))
+    max(0.625rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-right, 0px)) !important;
+}
+
+/* Inner track — identical max width, gap, and column layout */
+.bp-index-thumb-dock__inner,
+.inv-bottom-nav-inner,
+.bj-bottom-nav-inner,
+.detail-bottom-nav__dock {
+  width: 100% !important;
+  max-width: var(--bp-bottom-nav-track-max) !important;
+  margin: 0 auto !important;
+  pointer-events: auto;
+  box-sizing: border-box !important;
+}
+
+.bp-index-thumb-dock__inner {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: var(--bp-bottom-nav-gap) !important;
+}
+
+.inv-bottom-nav-inner,
+.bj-bottom-nav-inner,
+.detail-bottom-nav__dock.bp-thumb-dock--split,
+.detail-bottom-nav__dock {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: var(--bp-bottom-nav-gap) !important;
+  align-items: stretch !important;
+}
+
+/* All bottom-nav controls — same height, type, and alignment */
+.bp-bottom-nav-item,
+.bp-index-thumb-dock .bp-bottom-nav-item,
+.bp-index-thumb-dock #add-vehicle-thumb,
+.inv-bottom-nav .bp-bottom-nav-item,
+.inv-bottom-nav .inv-btn,
+.bj-bottom-nav .bp-bottom-nav-item,
+.bj-bottom-nav .bj-btn,
+.detail-bottom-nav .bp-bottom-nav-item,
+.detail-bottom-nav a {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: var(--bp-bottom-nav-height) !important;
+  height: var(--bp-bottom-nav-height) !important;
+  max-height: var(--bp-bottom-nav-height) !important;
+  padding: 0 var(--bp-bottom-nav-pad-x) !important;
+  margin: 0 !important;
+  border-radius: 12px !important;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: var(--bp-bottom-nav-font-size) !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  text-decoration: none !important;
+  text-align: center !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.45rem !important;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease !important;
+  box-shadow: none !important;
+}
+
+.detail-bottom-nav .detail-back-dashboard-btn__icon {
+  width: 1rem !important;
+  height: 1rem !important;
+  flex-shrink: 0 !important;
+  opacity: 1 !important;
+}
+
+.detail-bottom-nav .detail-back-dashboard-btn__label {
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+/* Inactive tabs — uniform muted gray */
+.bp-bottom-nav-item:not(.is-active):not([aria-current="page"]):not(.bp-bottom-nav-item--primary),
+.inv-bottom-nav .bp-bottom-nav-item:not(.is-active):not([aria-current="page"]),
+.bj-bottom-nav .bp-bottom-nav-item:not(.is-active):not([aria-current="page"]),
+.detail-bottom-nav .bp-bottom-nav-item:not(.is-active):not([aria-current="page"]):not(.bp-garage-mode-btn) {
+  background: var(--bp-bottom-nav-inactive-bg) !important;
+  color: var(--bp-bottom-nav-inactive-text) !important;
+  border: 1px solid var(--bp-bottom-nav-inactive-border) !important;
+}
+
+.bp-bottom-nav-item:not(.is-active):not([aria-current="page"]):not(.bp-bottom-nav-item--primary):active,
+.inv-bottom-nav .bp-bottom-nav-item:not(.is-active):not([aria-current="page"]):active,
+.bj-bottom-nav .bp-bottom-nav-item:not(.is-active):not([aria-current="page"]):active,
+.detail-bottom-nav .bp-bottom-nav-item:not(.is-active):not([aria-current="page"]):not(.bp-garage-mode-btn):active {
+  transform: scale(0.97) !important;
+  background: #1c1c27 !important;
+  border-color: #3a3a48 !important;
+  color: #8e8e93 !important;
+}
+
+/* Active tab — white label + cobalt border/glow */
+.bp-bottom-nav-item.is-active,
+.bp-bottom-nav-item[aria-current="page"],
+.inv-bottom-nav .bp-bottom-nav-item.is-active,
+.inv-bottom-nav .bp-bottom-nav-item[aria-current="page"],
+.bj-bottom-nav .bp-bottom-nav-item.is-active,
+.bj-bottom-nav .bp-bottom-nav-item[aria-current="page"],
+.detail-bottom-nav .bp-bottom-nav-item.is-active,
+.detail-bottom-nav .bp-bottom-nav-item[aria-current="page"] {
+  background: var(--bp-bottom-nav-active-bg) !important;
+  color: var(--bp-bottom-nav-active-text) !important;
+  border: 1px solid var(--bp-bottom-nav-active-border) !important;
+  box-shadow: 0 0 0 1px rgba(59, 158, 255, 0.25), 0 4px 14px rgba(59, 158, 255, 0.18) !important;
+}
+
+.bp-bottom-nav-item.is-active:active,
+.bp-bottom-nav-item[aria-current="page"]:active,
+.inv-bottom-nav .bp-bottom-nav-item.is-active:active,
+.bj-bottom-nav .bp-bottom-nav-item.is-active:active,
+.detail-bottom-nav .bp-bottom-nav-item.is-active:active {
+  transform: scale(0.97) !important;
+  background: #152238 !important;
+  border-color: #6eb8ff !important;
+  color: #ffffff !important;
+}
+
+/* Index primary dock action — same footprint, cobalt fill */
+.bp-bottom-nav-item--primary,
+.bp-index-thumb-dock #add-vehicle-thumb.bp-bottom-nav-item--primary {
+  background: #3b9eff !important;
+  color: #ffffff !important;
+  border: 1px solid #5cadff !important;
+  box-shadow: 0 4px 14px rgba(59, 158, 255, 0.28) !important;
+  font-weight: 800 !important;
+}
+
+.bp-bottom-nav-item--primary:active,
+.bp-index-thumb-dock #add-vehicle-thumb.bp-bottom-nav-item--primary:active {
+  background: #257cd0 !important;
+  border-color: #3b9eff !important;
+  transform: scale(0.97) !important;
+}
+
+/* Content tabs (inventory status, journal phase) — separate from bottom nav */
+.inv-tab.is-active,
+.bj-timeline-chip.is-active,
+.system-tab-btn.active,
+.filter-tab.active {
+  border-color: var(--bp-accent-glow) !important;
+  color: #ffffff !important;
+  background: #1c1c27 !important;
+}
+
+/* ==========================================================================
+   UNIFIED BUTTON SYSTEM
+   ========================================================================== */
+
+/* Primary filled CTAs */
+button.primary-action-btn,
+.btn-primary,
+.bp-btn-cta,
+.bp-btn--primary,
+#add-vehicle-btn,
+#add-vehicle-thumb,
+.add-vehicle-btn,
+.inv-fab,
+.bj-fab,
+.inv-btn--primary,
+.bj-btn--primary,
+.inline-drawer-btn-primary:not(.inline-drawer-btn-primary--pdf),
+.modal-btn-row button:not(.modal-btn-cancel),
+.user-manual-dismiss-btn,
+.bulk-btn,
+.bulk-download-btn,
+.start-wrenching-btn,
+.wf-resume-btn,
+.install-task-btn,
+.build-sheet-btn--primary,
+.mission-support-send-btn,
+.system-add-btn.bp-btn-cta {
+  background: #3b9eff !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+  border: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 14px rgba(59, 158, 255, 0.3) !important;
+  transition: all 0.2s ease !important;
+}
+
+button.primary-action-btn:active,
+.btn-primary:active,
+#add-vehicle-btn:active,
+#add-vehicle-thumb:active,
+.add-vehicle-btn:active,
+.inv-fab:active,
+.bj-fab:active,
+.bp-btn-cta:active {
+  background: #257cd0 !important;
+  transform: scale(0.97) !important;
+}
+
+/* Secondary muted actions (explicit — never all buttons) */
+button.secondary-action-btn,
+.btn-secondary,
+.bp-btn--secondary,
+.inv-btn--secondary:not(.bp-bottom-nav-item),
+.bj-btn--secondary:not(.bp-bottom-nav-item),
+.filter-tab,
+.inv-tab:not(.is-active),
+.system-tab-btn:not(.active),
+.bj-timeline-chip:not(.is-active),
+.bp-mode-tab:not(.is-active),
+.dashboard-toolbar-btn,
+.templates-menu-btn,
+.vault-export-btn,
+.vault-import-btn,
+.modal-btn-cancel,
+.modal-btn-row .modal-btn-cancel,
+.info-panel-action-btn:not(.info-panel-action-btn--primary),
+.mission-modal-action-btn,
+.mission-support-back-btn,
+.user-manual-back-btn,
+.gm-nav-btn,
+.segment-action-btn:not(.bp-btn-cta),
+.gm-action:not(.gm-action--primary):not(.gm-action--voice):not(.gm-action--timer),
+.build-sheet-close,
+.mission-support-back-btn {
+  background: #14141c !important;
+  color: #e5e5ea !important;
+  border: 1px solid #2c2c3e !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.15s ease !important;
+  box-shadow: none !important;
+}
+
+button.secondary-action-btn:active,
+.btn-secondary:active,
+.filter-tab:active,
+.inv-tab:active:not(.is-active),
+.system-tab-btn:active:not(.active),
+.dashboard-toolbar-btn:active,
+.templates-menu-btn:active,
+.modal-btn-cancel:active,
+.gm-nav-btn:active {
+  background: #1c1c27 !important;
+  border-color: #3b9eff !important;
+  color: #ffffff !important;
+  transform: scale(0.97);
+}
+
+/* Out-of-band controls (not secondary gray) */
+.vehicle-delete-btn,
+.trash-btn {
+  background: rgba(255, 69, 58, 0.14) !important;
+  border: 1px solid rgba(255, 69, 58, 0.55) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+}
+
+.dashboard-info-btn,
+.dashboard-config-btn,
+.inv-back-btn,
+.bj-back-btn,
+.bj-icon-btn,
+.gm-back-btn,
+.bi-panel-icon-btn,
+.bi-config-btn,
+.bi-info-btn {
+  background: #14141c !important;
+  border: 1px solid #2c2c3e !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+}
+
+.pdf-build-btn,
+.gm-start-cta {
+  background: linear-gradient(180deg, #142818 0%, var(--bp-panel-card) 100%) !important;
+  border: 2px solid var(--bp-accent-success) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 20px rgba(46, 213, 115, 0.2) !important;
+  text-transform: none !important;
+}
+
+.gm-end-btn {
+  background: #2a1010 !important;
+  border: 2px solid #ff453a !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.gm-action--primary {
+  border-color: var(--bp-accent-success) !important;
+  background: #142818 !important;
+}
+
+.gm-voice-save {
+  background: var(--bp-accent-success) !important;
+  color: #000000 !important;
+  border: none !important;
+}
+
+/* Garage Mode — match vehicle card outline (overrides bottom-nav gray + legacy green) */
+.bp-garage-mode-btn,
+.detail-garage-mode-btn,
+.wf-garage-mode-btn {
+  border: 2px solid var(--bp-garage-outline, #3de87a) !important;
+  background: var(--bp-garage-outline-fill) !important;
+  color: var(--bp-garage-outline, #3de87a) !important;
+  box-shadow: none !important;
+  text-transform: uppercase !important;
+  font-weight: 800 !important;
+}
+
+.bp-garage-mode-btn:active,
+.detail-garage-mode-btn:active,
+.wf-garage-mode-btn:active {
+  background: var(--bp-garage-outline-fill-active) !important;
+  border-color: var(--bp-garage-outline-hi) !important;
+  color: var(--bp-garage-outline-hi) !important;
+}
+
+.detail-bottom-nav .detail-garage-mode-btn.bp-garage-mode-btn.bp-bottom-nav-item {
+  border: 2px solid var(--bp-garage-outline, #3de87a) !important;
+  background: var(--bp-garage-outline-fill, rgba(61, 232, 122, 0.08)) !important;
+  color: var(--bp-garage-outline, #3de87a) !important;
+  box-shadow: none !important;
+}
+
+.detail-bottom-nav .detail-garage-mode-btn.bp-garage-mode-btn.bp-bottom-nav-item:active {
+  background: var(--bp-garage-outline-fill-active, rgba(61, 232, 122, 0.16)) !important;
+  border-color: var(--bp-garage-outline-hi, #6ef0a0) !important;
+  color: var(--bp-garage-outline-hi, #6ef0a0) !important;
+}
+
+.info-panel-action-btn--primary {
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  background: linear-gradient(180deg, #2a2a2c 0%, #1e1e20 100%) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   FORM INPUTS & SELECTS
+   ========================================================================== */
+select:not(.uniform-checkbox),
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+input[type="date"],
+textarea,
+.form-input,
+.av-field-input,
+.inv-input,
+.bj-input,
+.svc-select,
+.cost-input,
+.reg-status-date,
+.mission-support-textarea,
+.mission-support-email-input {
+  background-color: #09090b !important;
+  border: 1px solid #27272a !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  font-size: 16px !important;
+}
+
+select:focus,
+input:focus,
+textarea:focus,
+.form-input:focus,
+.inv-input:focus,
+.bj-input:focus {
+  border-color: #3b9eff !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(59, 158, 255, 0.2) !important;
+}
+
+.chapter-item-row select.status-select.card-status-select {
+  padding: 6px 28px 6px 10px !important;
+  font-size: 14px !important;
+}
+
+/* ==========================================================================
+   PARTS INVENTORY — three-column row grid (name | cost | status)
+   ========================================================================== */
+button.inv-part-card.part-row,
+button.inv-part-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  min-height: 96px !important;
+  height: auto !important;
+  padding: 0.95rem 1rem !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
+}
+
+.inv-list .inv-part-card.part-row,
+.inv-part-card.part-row,
+.part-row.inv-part-card {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.part-row-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 2fr) minmax(5.5rem, 1fr) minmax(4.5rem, 1fr) !important;
+  grid-template-areas: "name cost status" !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  gap: 12px !important;
+}
+
+.part-row-col--name {
+  grid-area: name !important;
+  justify-self: stretch !important;
+  text-align: left !important;
+}
+
+.part-row-col--cost {
+  grid-area: cost !important;
+  justify-self: stretch !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.part-row-col--status,
+.inv-part-status-wrap {
+  grid-area: status !important;
+  justify-self: stretch !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+.inv-part-name {
+  text-align: left !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  width: 100% !important;
+}
+
+.inv-part-price {
+  text-align: center !important;
+  font-family: "JetBrains Mono", monospace !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+.inv-status-badge {
+  min-height: auto !important;
+  margin-left: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:active,
+  .vehicle-card:active,
+  .inv-part-card:active,
+  .bj-card:active {
+    transform: none;
+  }
+}

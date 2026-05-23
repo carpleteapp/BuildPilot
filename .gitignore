@@ -1,0 +1,20 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Logs / env (if added later)
+*.log
+.env
+.env.*
+
+# Archives (optional local deploy bundles)
+*.zip

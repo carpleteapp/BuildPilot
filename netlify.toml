@@ -1,0 +1,13 @@
+# Static BuildPilot site — publish repo root (all HTML, css/, js/).
+[build]
+  publish = "."
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/settings.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

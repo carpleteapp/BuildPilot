@@ -1,0 +1,220 @@
+/* Settings page — matches BuildPilot dark garage theme */
+.bp-settings-page {
+  margin: 0;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: #000;
+  color: var(--bp-text, #f5f5f7);
+  font-family: var(--bp-font-body, Inter, sans-serif);
+}
+
+.bp-settings-shell {
+  width: 100%;
+  max-width: min(22rem, 100%);
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding:
+    max(0.75rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+}
+
+.bp-settings-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+  width: 100%;
+}
+
+.bp-settings-back {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #2a2a2c 0%, #1e1e20 100%);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.bp-settings-back:active {
+  transform: scale(0.97);
+}
+
+.bp-settings-eyebrow {
+  margin: 0;
+  font-family: var(--bp-font-mono, "JetBrains Mono", monospace);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(236, 238, 242, 0.55);
+}
+
+.bp-settings-title {
+  margin: 0.2rem 0 0;
+  font-family: var(--bp-font-display, Archivo, sans-serif);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.bp-settings-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.bp-settings-save-status {
+  width: 100%;
+  max-width: min(20rem, 100%);
+  margin: 0 auto 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(76, 175, 80, 0.35);
+  background: rgba(76, 175, 80, 0.12);
+  color: #a5d6a7;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.bp-settings-mount {
+  width: 100%;
+  max-width: min(20rem, 100%);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.bp-settings-mount .modal-content.bi-config-modal--page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-height: none;
+  border-radius: 12px;
+  padding: 0.75rem 0.8rem 0.85rem;
+}
+
+.bp-settings-mount .modal-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.bp-settings-mount .bi-config-hint {
+  margin: 0 0 0.55rem;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.bp-settings-mount .bi-config-form {
+  gap: 0.15rem;
+}
+
+.bp-settings-mount .bi-config-field {
+  margin-bottom: 0.2rem;
+}
+
+.bp-settings-mount .bi-config-label {
+  font-size: 0.58rem;
+  margin-bottom: 0.2rem;
+}
+
+.bp-settings-mount .bi-config-field-hint {
+  font-size: 0.65rem;
+  line-height: 1.35;
+}
+
+.bp-settings-mount .bi-config-section-lbl {
+  margin: 0.45rem 0 0.15rem;
+  font-size: 0.55rem;
+  text-align: center;
+}
+
+.bp-settings-mount .form-input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 40px;
+  padding: 6px 8px;
+}
+
+.bp-settings-mount .bi-config-check {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  column-gap: 0.7rem;
+  align-items: center;
+  min-height: 0;
+  padding: 0.28rem 0;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.bp-settings-mount .bi-config-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  align-self: center;
+  justify-self: start;
+}
+
+.bp-settings-mount .bi-config-check-label {
+  align-self: center;
+}
+
+.bp-settings-error {
+  margin: 0;
+  padding: 1rem;
+  color: rgba(236, 238, 242, 0.72);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Settings form footer — stacked, centered actions */
+.bp-settings-mount .bp-settings-form-actions.modal-btn-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+}
+
+.bp-settings-mount .bp-settings-back-btn {
+  align-self: center;
+  width: auto;
+  max-width: 100%;
+  flex: none !important;
+  padding: 0.6rem 0.95rem;
+  font-size: 0.8rem;
+}
+
+.bp-settings-mount .bp-settings-save-btn {
+  align-self: center;
+  width: auto;
+  min-width: 9rem;
+  max-width: min(240px, 100%);
+  flex: none !important;
+  padding: 0.65rem 1.75rem;
+  margin-top: 0;
+}
