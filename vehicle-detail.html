@@ -9895,6 +9895,8 @@
       const pct = Math.round((done / list.length) * 100);
       return `${pct}% complete (${done} of ${list.length})`;
     }
+
+    function computeBuildSheetFinancials() {
       const parts = getPartsFromStorage();
       const tasks = getTasksFromStorage();
       const labor = getLaborFromStorage();

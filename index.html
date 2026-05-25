@@ -4259,6 +4259,10 @@
 
     function openAddVehicleModal() {
       const overlay = document.getElementById("modal-overlay");
+      if (!overlay) {
+        console.error("BuildPilot: modal overlay missing");
+        return;
+      }
       overlay.innerHTML = "";
 
       const modal = document.createElement("div");
@@ -4524,17 +4528,26 @@
       renderVehicles();
       wireProjectStatsToggle();
       wireHeaderActions();
-      const addVehicleBtn = document.getElementById('add-vehicle-btn');
-      if (addVehicleBtn && addVehicleBtn.dataset.wired !== '1') {
-        addVehicleBtn.dataset.wired = '1';
-        addVehicleBtn.addEventListener('click', openAddVehicleModal);
+      function wireAddVehicleControls() {
+        const openModal = function (e) {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          openAddVehicleModal();
+        };
+        const addVehicleBtn = document.getElementById('add-vehicle-btn');
+        if (addVehicleBtn && addVehicleBtn.dataset.wired !== '1') {
+          addVehicleBtn.dataset.wired = '1';
+          addVehicleBtn.addEventListener('click', openModal);
+        }
+        const addVehicleThumb = document.getElementById('add-vehicle-thumb');
+        if (addVehicleThumb && addVehicleThumb.dataset.wired !== '1') {
+          addVehicleThumb.dataset.wired = '1';
+          addVehicleThumb.addEventListener('click', openModal);
+        }
       }
-      const addVehicleThumb = document.getElementById('add-vehicle-thumb');
-      if (addVehicleThumb) {
-        addVehicleThumb.addEventListener('click', function () {
-          document.getElementById('add-vehicle-btn')?.click();
-        });
-      }
+      wireAddVehicleControls();
       wireBulkActions();
       wireVaultActions();
       const headerLogo = document.querySelector(".app-header-logo");
