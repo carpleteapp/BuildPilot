@@ -2823,6 +2823,78 @@
     .wf-pdf-sheet-panel {
       margin-top: 0.45rem;
     }
+    .wf-progress-actions-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+    .wf-vehicle-settings-toggle {
+      min-width: 3.25rem;
+      max-width: 3.25rem;
+      padding-left: 0.35rem !important;
+      padding-right: 0.35rem !important;
+    }
+    .wf-vehicle-settings-toggle .wf-settings-gear-icon {
+      width: 1.15rem;
+      height: 1.15rem;
+      flex-shrink: 0;
+    }
+    .wf-vehicle-settings-toggle .project-stats-chevron {
+      display: none;
+    }
+    .vehicle-settings-form-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+    .vehicle-settings-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem;
+    }
+    .vehicle-settings-field label {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--svc-text-soft);
+    }
+    .vehicle-settings-field input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .vehicle-settings-subhead {
+      margin: 0.35rem 0 0;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--svc-text-soft);
+    }
+    .system-folder--custom > summary .system-folder-head {
+      gap: 0.5rem;
+      min-width: 0;
+    }
+    .system-folder--custom .system-folder-title {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .system-folder--custom .system-folder-pct {
+      flex: 0 0 auto;
+      margin-left: 0.25rem;
+    }
+    .system-folder--custom > summary {
+      -webkit-user-select: none;
+      user-select: none;
+    }
     /* Est. Finish / PDF / Registration metrics: css/buildpilot-ux.css (.wf-progress-metrics) */
     .hero-edit-modal-hint {
       margin: 0 0 0.85rem;
@@ -4479,6 +4551,104 @@
       updateProgress();
     }
 
+    function openCustomSegmentActionMenu(systemName) {
+      const overlay = document.getElementById("modal-overlay");
+      if (!overlay) return;
+      overlay.innerHTML = "";
+
+      const modal = document.createElement("div");
+      modal.className = "modal-content";
+      modal.style.maxWidth = "340px";
+
+      const title = document.createElement("div");
+      title.className = "modal-title";
+      title.textContent = systemName || "Segment";
+
+      const hint = document.createElement("p");
+      hint.className = "hero-edit-modal-hint";
+      hint.textContent = "Rename this build segment or remove it and its items.";
+
+      const btnRow = document.createElement("div");
+      btnRow.className = "modal-btn-row";
+      btnRow.style.flexDirection = "column";
+      btnRow.style.gap = "0.45rem";
+
+      const renameBtn = document.createElement("button");
+      renameBtn.type = "button";
+      renameBtn.className = "modal-btn-primary";
+      renameBtn.textContent = "Rename segment";
+      renameBtn.onclick = () => {
+        closeHeroEditModal();
+        renameCustomBuildSegment(systemName);
+      };
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "modal-btn-cancel";
+      deleteBtn.textContent = "Delete segment";
+      deleteBtn.style.background = "var(--svc-red)";
+      deleteBtn.style.color = "#fff";
+      deleteBtn.onclick = () => {
+        closeHeroEditModal();
+        deleteCustomBuildSegment(systemName);
+      };
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "modal-btn-cancel";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.onclick = closeHeroEditModal;
+
+      btnRow.appendChild(renameBtn);
+      btnRow.appendChild(deleteBtn);
+      btnRow.appendChild(cancelBtn);
+      modal.appendChild(title);
+      modal.appendChild(hint);
+      modal.appendChild(btnRow);
+      modal.addEventListener("click", (e) => e.stopPropagation());
+      overlay.appendChild(modal);
+      overlay.onclick = (e) => { if (e.target === overlay) closeHeroEditModal(); };
+      overlay.classList.add("active");
+    }
+
+    function wireCustomSegmentHeaderGestures(summaryEl, systemName) {
+      if (!summaryEl || summaryEl.dataset.segmentGesturesWired === "1") return;
+      summaryEl.dataset.segmentGesturesWired = "1";
+      let pressTimer = null;
+      let longPressFired = false;
+
+      function clearPress() {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      }
+
+      summaryEl.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        longPressFired = false;
+        clearPress();
+        pressTimer = setTimeout(() => {
+          longPressFired = true;
+          try {
+            if (navigator.vibrate) navigator.vibrate(12);
+          } catch (_v) { /* ignore */ }
+          openCustomSegmentActionMenu(systemName);
+        }, 520);
+      });
+
+      ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => {
+        summaryEl.addEventListener(ev, clearPress);
+      });
+
+      summaryEl.addEventListener("click", (e) => {
+        if (!longPressFired) return;
+        e.preventDefault();
+        e.stopPropagation();
+        longPressFired = false;
+      }, true);
+    }
+
     function deleteCustomBuildSegment(segmentName) {
       if (!currentVehicle || !isCustomBuildVehicle(currentVehicle)) return;
       const parts = getPartsFromStorage();
@@ -5379,7 +5549,7 @@
       metricsEl.appendChild(m);
     }
 
-    function appendPdfBuildSheetToggleBtn(metricsEl) {
+    function appendPdfBuildSheetToggleBtn(parentEl) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.id = "pdf-build-sheet-toggle";
@@ -5387,7 +5557,198 @@
       btn.setAttribute("aria-expanded", "false");
       btn.setAttribute("aria-controls", "pdf-build-sheet-panel");
       btn.innerHTML = `<span class="pdf-build-btn-label">PDF Build Sheet</span><svg class="project-stats-chevron" viewBox="0 0 12 12" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5 6 7.5 9 4.5"/></svg>`;
-      metricsEl.appendChild(btn);
+      parentEl.appendChild(btn);
+      return btn;
+    }
+
+    function appendVehicleSettingsGearBtn(parentEl) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.id = "vehicle-project-settings-toggle";
+      btn.className = "wf-vehicle-settings-toggle wf-metric-pdf project-stats-btn";
+      btn.setAttribute("aria-label", "Project settings");
+      btn.title = "Project settings";
+      btn.innerHTML = `<svg class="wf-settings-gear-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72 1.42-1.42"/></svg>`;
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openVehicleProjectSettingsModal();
+      });
+      parentEl.appendChild(btn);
+      return btn;
+    }
+
+    function appendProjectActionsRow(metricsEl) {
+      const row = document.createElement("div");
+      row.className = "wf-progress-actions-row";
+      appendPdfBuildSheetToggleBtn(row);
+      appendVehicleSettingsGearBtn(row);
+      metricsEl.appendChild(row);
+    }
+
+    function vehicleSettingsField(labelText, inputEl) {
+      const wrap = document.createElement("div");
+      wrap.className = "vehicle-settings-field";
+      const lbl = document.createElement("label");
+      lbl.textContent = labelText;
+      lbl.appendChild(inputEl);
+      wrap.appendChild(lbl);
+      return wrap;
+    }
+
+    function openVehicleProjectSettingsModal() {
+      if (!currentVehicle) return;
+      const overlay = document.getElementById("modal-overlay");
+      if (!overlay) return;
+      overlay.innerHTML = "";
+
+      const modal = document.createElement("div");
+      modal.className = "modal-content";
+      modal.style.maxWidth = "420px";
+
+      const title = document.createElement("div");
+      title.className = "modal-title";
+      title.textContent = "Project Settings";
+
+      const hint = document.createElement("p");
+      hint.className = "hero-edit-modal-hint";
+      hint.textContent = "Update vehicle details, target completion, and registration for this build.";
+
+      const stack = document.createElement("div");
+      stack.className = "vehicle-settings-form-stack";
+
+      const yearInp = document.createElement("input");
+      yearInp.type = "text";
+      yearInp.className = "form-input";
+      yearInp.placeholder = "Year";
+      yearInp.value = String(currentVehicle.year || "").trim();
+      yearInp.setAttribute("inputmode", "numeric");
+
+      const makeInp = document.createElement("input");
+      makeInp.type = "text";
+      makeInp.className = "form-input";
+      makeInp.placeholder = "Make";
+      makeInp.value = String(currentVehicle.make || "").trim();
+
+      const modelInp = document.createElement("input");
+      modelInp.type = "text";
+      modelInp.className = "form-input";
+      modelInp.placeholder = "Model";
+      modelInp.value = String(currentVehicle.model || "").trim();
+
+      const ymRow = document.createElement("div");
+      ymRow.className = "vehicle-settings-grid-2";
+      ymRow.appendChild(vehicleSettingsField("Year", yearInp));
+      const makeModelRow = document.createElement("div");
+      makeModelRow.className = "vehicle-settings-grid-2";
+      makeModelRow.appendChild(vehicleSettingsField("Make", makeInp));
+      makeModelRow.appendChild(vehicleSettingsField("Model", modelInp));
+      stack.appendChild(ymRow);
+      stack.appendChild(makeModelRow);
+
+      const vinInp = document.createElement("input");
+      vinInp.type = "text";
+      vinInp.className = "form-input";
+      vinInp.placeholder = "Optional";
+      vinInp.value = String(currentVehicle.vin || "").trim();
+      stack.appendChild(vehicleSettingsField("VIN", vinInp));
+
+      const priceInp = document.createElement("input");
+      priceInp.type = "number";
+      priceInp.className = "form-input";
+      priceInp.min = "0";
+      priceInp.step = "0.01";
+      priceInp.placeholder = "0.00";
+      const pp = Number(currentVehicle.vehiclePurchasePrice);
+      priceInp.value = Number.isFinite(pp) && pp > 0 ? String(pp) : "";
+      stack.appendChild(vehicleSettingsField("Purchase Price ($)", priceInp));
+
+      const targetSub = document.createElement("p");
+      targetSub.className = "vehicle-settings-subhead";
+      targetSub.textContent = "Target completion";
+      stack.appendChild(targetSub);
+
+      const targetInp = document.createElement("input");
+      targetInp.type = "date";
+      targetInp.className = "form-input reg-status-date";
+      targetInp.style.colorScheme = "dark";
+      targetInp.value = getVehicleEstimatedFinishDatePickerValue(currentVehicle);
+      stack.appendChild(vehicleSettingsField("Estimated finish date", targetInp));
+
+      const regSub = document.createElement("p");
+      regSub.className = "vehicle-settings-subhead";
+      regSub.textContent = "Registration";
+      stack.appendChild(regSub);
+
+      const expiryInp = document.createElement("input");
+      expiryInp.type = "date";
+      expiryInp.className = "form-input hero-reg-expiry-input reg-status-date";
+      expiryInp.style.colorScheme = "dark";
+      const regExpiryKey = getRegExpiryStorageKey(currentVehicle.id);
+      const rawExpiry = localStorage.getItem(regExpiryKey);
+      if (rawExpiry) {
+        const dt = new Date(rawExpiry);
+        if (!isNaN(dt.getTime())) expiryInp.value = dt.toISOString().slice(0, 10);
+      }
+      stack.appendChild(vehicleSettingsField("Expiration date", expiryInp));
+
+      const nonOpWrap = document.createElement("label");
+      nonOpWrap.className = "hero-reg-nonop-row";
+      const nonOpCb = document.createElement("input");
+      nonOpCb.type = "checkbox";
+      nonOpCb.className = "uniform-checkbox";
+      nonOpCb.checked = !!currentVehicle.regNonOp;
+      const nonOpSpan = document.createElement("span");
+      nonOpSpan.textContent = "Registration is Non-Op";
+      nonOpWrap.appendChild(nonOpCb);
+      nonOpWrap.appendChild(nonOpSpan);
+      stack.appendChild(nonOpWrap);
+
+      const btnRow = document.createElement("div");
+      btnRow.className = "modal-btn-row";
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "modal-btn-cancel";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.onclick = closeHeroEditModal;
+      const saveBtn = document.createElement("button");
+      saveBtn.type = "button";
+      saveBtn.className = "modal-btn-primary";
+      saveBtn.textContent = "Save";
+      saveBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const year = yearInp.value.trim();
+        const make = makeInp.value.trim();
+        const model = modelInp.value.trim();
+        if (!year || !make || !model) {
+          alert("Year, Make, and Model are required.");
+          return;
+        }
+        const displayName = `${year} ${make} ${model}`.trim();
+        patchCurrentVehicleProject({
+          year,
+          make,
+          model,
+          name: displayName,
+          vin: vinInp.value.trim(),
+          vehiclePurchasePrice: parseCost(priceInp.value) || 0
+        });
+        saveVehicleTargetCompletionDate(targetInp.value);
+        applyVehicleRegistration(expiryInp.value, nonOpCb.checked);
+      };
+      btnRow.appendChild(cancelBtn);
+      btnRow.appendChild(saveBtn);
+
+      modal.appendChild(title);
+      modal.appendChild(hint);
+      modal.appendChild(stack);
+      modal.appendChild(btnRow);
+      modal.addEventListener("click", (e) => e.stopPropagation());
+      overlay.appendChild(modal);
+      overlay.onclick = (e) => { if (e.target === overlay) closeHeroEditModal(); };
+      overlay.classList.add("active");
+      yearInp.focus();
     }
 
     function renderBuildProgressSection(snap) {
@@ -5404,19 +5765,16 @@
       appendHeroMetric(metrics, {
         lbl: "Est. Finish",
         val: snap.estimateLabel,
-        editable: true,
-        toneClass: estUnset ? "wf-metric-est wf-metric-est--unset" : "wf-metric-est",
-        onEdit: openEstFinishEditModal
+        editable: false,
+        toneClass: estUnset ? "wf-metric-est wf-metric-est--unset" : "wf-metric-est"
       });
-      appendPdfBuildSheetToggleBtn(metrics);
       appendHeroMetric(metrics, {
         lbl: "Registration",
         val: snap.registrationLabel,
-        editable: true,
-        toneClass: snap.registrationTone,
-        fullWidth: true,
-        onEdit: openRegistrationStatusEditModal
+        editable: false,
+        toneClass: snap.registrationTone
       });
+      appendProjectActionsRow(metrics);
       wirePdfBuildSheetDrawer();
     }
 
@@ -5473,7 +5831,7 @@
       window.wfPartsUi = { view: "list", detailId: null };
     }
     if (!window.wfPartsFilterState) {
-      window.wfPartsFilterState = { Needed: true, Ordered: true, Received: true, Installed: true };
+      window.wfPartsFilterState = { Needed: false, Ordered: true, Received: true, Installed: true };
     }
 
     if (window.wfPartsCategoryFilter == null) {
@@ -5520,9 +5878,8 @@
         window.BuildPilotInventory.ensureVehicleInventory(currentVehicle);
       }
       if (!window.wfPartsFilterState) {
-        window.wfPartsFilterState = { Needed: true, Ordered: true, Received: true, Installed: true };
+        window.wfPartsFilterState = { Needed: false, Ordered: true, Received: true, Installed: true };
       }
-      window.wfPartsFilterState.Needed = true;
       openWfPartDetail("new");
     }
 
@@ -5542,9 +5899,9 @@
     }
 
     function syncWfInventoryListForPartStatus(nextStatus) {
-      if (!nextStatus) return;
+      if (!nextStatus || nextStatus === "Needed") return;
       if (!window.wfPartsFilterState) {
-        window.wfPartsFilterState = { Needed: true, Ordered: true, Received: true, Installed: true };
+        window.wfPartsFilterState = { Needed: false, Ordered: true, Received: true, Installed: true };
       }
       window.wfPartsFilterState[nextStatus] = true;
       if (window.wfPartsUi && window.wfPartsUi.view === "detail") return;
@@ -9552,7 +9909,7 @@
       if (isCustom && segmentNames.length === 0) {
         const empty = document.createElement("div");
         empty.className = "custom-segments-empty";
-        empty.textContent = "Create custom build segments to organize parts, tasks, and outside labor.";
+        empty.textContent = "Create custom build segments to organize parts, tasks, and outside labor. Press and hold a segment header to rename or delete.";
         wrap.appendChild(empty);
         const addWrap = document.createElement("div");
         addWrap.className = "add-build-segment-wrap";
@@ -9570,7 +9927,7 @@
 
       segmentNames.forEach((systemName, folderIndex) => {
         const details = document.createElement("details");
-        details.className = "system-folder";
+        details.className = "system-folder" + (isCustom ? " system-folder--custom" : "");
         details.dataset.systemName = systemName;
         const shouldOpen = openSystemName === systemName;
         if (shouldOpen) details.setAttribute("open", "");
@@ -9619,32 +9976,11 @@
           : (progress.pct >= 100 ? "Complete" : `${progress.pct}%`);
         head.appendChild(title);
         head.appendChild(pct);
-        if (isCustom) {
-          const actions = document.createElement("div");
-          actions.className = "system-folder-actions";
-          const editBtn = document.createElement("button");
-          editBtn.type = "button";
-          editBtn.className = "segment-action-btn";
-          editBtn.textContent = "Edit";
-          editBtn.onclick = (evt) => {
-            evt.preventDefault();
-            evt.stopPropagation();
-            renameCustomBuildSegment(systemName);
-          };
-          const delBtn = document.createElement("button");
-          delBtn.type = "button";
-          delBtn.className = "segment-action-btn segment-action-btn--danger";
-          delBtn.textContent = "Delete";
-          delBtn.onclick = (evt) => {
-            evt.preventDefault();
-            evt.stopPropagation();
-            deleteCustomBuildSegment(systemName);
-          };
-          actions.appendChild(editBtn);
-          actions.appendChild(delBtn);
-          head.appendChild(actions);
-        }
         summary.appendChild(head);
+        if (isCustom) {
+          summary.title = "Press and hold to rename or delete";
+          wireCustomSegmentHeaderGestures(summary, systemName);
+        }
 
         if (hasItems) {
           const track = document.createElement("div");

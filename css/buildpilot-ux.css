@@ -440,8 +440,28 @@ summary,
 }
 
 /* Vehicle detail hero metrics — same outline language as chapter tabs / add buttons */
+.wf-progress-actions-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.wf-progress-actions-row .wf-pdf-sheet-toggle {
+  min-width: 0;
+}
+.wf-progress-metrics .wf-vehicle-settings-toggle {
+  min-width: 3.25rem;
+  max-width: 3.25rem;
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .wf-progress-metrics .wf-metric,
-.wf-progress-metrics .wf-pdf-sheet-toggle {
+.wf-progress-metrics .wf-pdf-sheet-toggle,
+.wf-progress-metrics .wf-vehicle-settings-toggle {
   min-height: 52px;
   height: auto;
   padding: 0.5rem 0.65rem;
@@ -515,11 +535,13 @@ summary,
   color: inherit;
 }
 .wf-progress-metrics .wf-metric--editable:active,
-.wf-progress-metrics .wf-pdf-sheet-toggle:active {
+.wf-progress-metrics .wf-pdf-sheet-toggle:active,
+.wf-progress-metrics .wf-vehicle-settings-toggle:active {
   transform: scale(0.98);
 }
 .wf-progress-metrics .wf-metric--editable:focus-visible,
-.wf-progress-metrics .wf-pdf-sheet-toggle:focus-visible {
+.wf-progress-metrics .wf-pdf-sheet-toggle:focus-visible,
+.wf-progress-metrics .wf-vehicle-settings-toggle:focus-visible {
   outline: 2px solid var(--bp-accent-hi);
   outline-offset: 2px;
 }

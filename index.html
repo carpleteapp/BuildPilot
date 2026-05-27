@@ -3784,6 +3784,11 @@
       "Standard projects use a fixed set of automotive chapters — Engine, Brakes, Suspension, and the rest. Pick Standard for typical car or truck restorations where those system names match how you work.",
       "Custom projects start with no chapters. On the build detail screen, add your own segment names to match your project — for example by phase, subsystem, or budget area. Parts, tasks, and outside labor are organized inside those segments."
     ];
+    const USER_MANUAL_BUILD_INSIGHTS = [
+      "Build Insights is a quiet summary panel on each project — not push alerts. It reads your parts, tasks, labor, target date, and recent activity, then highlights helpful watch items (for example stalled progress, parts waiting to install, or budget pressure).",
+      "Open the gear in Settings (app header) to tune which insight types appear and thresholds such as inactive days, deadline warning window, and default labor rate.",
+      "Garage Insights on the home Project Stats panel rolls up the same logic across all active builds so you can spot which projects need attention first."
+    ];
 
     function showModalOverlay(overlay) {
       if (!overlay) return;
@@ -3877,6 +3882,7 @@
       body.appendChild(intro);
 
       appendUserManualSection(body, "Standard vs Custom projects", USER_MANUAL_BUILD_TYPES);
+      appendUserManualSection(body, "Build Insights", USER_MANUAL_BUILD_INSIGHTS);
 
       const colorsHeading = document.createElement("section");
       colorsHeading.className = "user-manual-section";
